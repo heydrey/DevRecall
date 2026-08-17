@@ -4,7 +4,7 @@
     "topicId": "javascript",
     "sectionId": "promises",
     "question": "Какие состояния есть у Promise и может ли выполненный Promise изменить результат?",
-    "answer": "Promise начинается в состоянии `pending`, затем один раз переходит в `fulfilled` или `rejected`. После выполнения состояние и результат зафиксированы: повторные вызовы `resolve` или `reject` игнорируются.",
+    "answer": "Promise начинается в состоянии `pending`, затем один раз переходит в `fulfilled` или `rejected`. После выполнения состояние и результат зафиксированы: повторные вызовы `resolve` или `reject` игнорируются.\n\n**Простой пример:**\n```js\nconst promise = new Promise((resolve, reject) => {\n  resolve('готово')\n  reject(new Error('поздно'))\n})\n\npromise.then(console.log) // 'готово'\n```\nПервый `resolve` уже зафиксировал результат, поэтому последующий `reject` ничего не изменит.",
     "level": "basic",
     "tags": ["promise", "states"],
     "enabled": true
@@ -14,7 +14,7 @@
     "topicId": "javascript",
     "sectionId": "promises",
     "question": "Что возвращает метод `then`?",
-    "answer": "`then` всегда возвращает **новый Promise**. Если обработчик возвращает обычное значение, новый Promise выполняется с ним. Если возвращается Promise или thenable, новый Promise принимает его состояние. Если обработчик выбрасывает ошибку, новый Promise отклоняется.",
+    "answer": "`then` всегда возвращает **новый Promise**. Если обработчик возвращает обычное значение, новый Promise выполняется с ним. Если возвращается Promise или thenable, новый Promise принимает его состояние. Если обработчик выбрасывает ошибку, новый Promise отклоняется.\n\n**Простой пример:**\n```js\nPromise.resolve(2)\n  .then(number => number * 3)\n  .then(console.log) // 6\n```\nПервый `then` создал новый Promise со значением `6`, которое получил следующий `then`.",
     "level": "basic",
     "tags": ["promise", "then", "chaining"],
     "enabled": true
@@ -24,7 +24,7 @@
     "topicId": "javascript",
     "sectionId": "promises",
     "question": "Как ошибка проходит по цепочке Promise?",
-    "answer": "Ошибка, выброшенная в executor или обработчике `then`, превращается в rejected Promise и проходит вниз по цепочке до ближайшего обработчика отклонения — `catch` или второго аргумента `then`. Если `catch` успешно возвращает значение, цепочка после него снова становится fulfilled.",
+    "answer": "Ошибка, выброшенная в executor или обработчике `then`, превращается в rejected Promise и проходит вниз по цепочке до ближайшего обработчика отклонения — `catch` или второго аргумента `then`. Если `catch` успешно возвращает значение, цепочка после него снова становится fulfilled.\n\n**Простой пример:**\n```js\nPromise.resolve()\n  .then(() => { throw new Error('Не получилось') })\n  .catch(error => console.log(error.message))\n```\nОшибка из `then` автоматически дошла до ближайшего `catch`.",
     "level": "middle",
     "tags": ["promise", "errors", "catch"],
     "enabled": true
@@ -34,7 +34,7 @@
     "topicId": "javascript",
     "sectionId": "promises",
     "question": "Как ведёт себя `Promise.all`, если одна операция завершается ошибкой?",
-    "answer": "Результирующий Promise отклоняется сразу после первого полученного rejection и отдаёт эту ошибку. Остальные операции при этом автоматически не отменяются и могут продолжить работу. Для отмены нужен отдельный механизм, например `AbortController`, если операция его поддерживает.",
+    "answer": "Результирующий Promise отклоняется сразу после первого полученного rejection и отдаёт эту ошибку. Остальные операции при этом автоматически не отменяются и могут продолжить работу. Для отмены нужен отдельный механизм, например `AbortController`, если операция его поддерживает.\n\n**Простой пример:**\n```js\nawait Promise.all([\n  Promise.resolve('пользователь'),\n  Promise.reject(new Error('Сервер недоступен'))\n])\n```\nВесь `Promise.all` завершится ошибкой, потому что один обязательный результат не получен.",
     "level": "middle",
     "tags": ["promise-all", "errors", "concurrency"],
     "enabled": true
@@ -44,7 +44,7 @@
     "topicId": "javascript",
     "sectionId": "promises",
     "question": "Когда использовать `Promise.allSettled` вместо `Promise.all`?",
-    "answer": "`allSettled` нужен, когда важен результат каждой независимой операции, даже если некоторые завершились ошибкой. Он ждёт все Promise и возвращает объекты со статусом `fulfilled` или `rejected`. `Promise.all` лучше, когда без любого одного результата общий результат не имеет смысла.",
+    "answer": "`allSettled` нужен, когда важен результат каждой независимой операции, даже если некоторые завершились ошибкой. Он ждёт все Promise и возвращает объекты со статусом `fulfilled` или `rejected`. `Promise.all` лучше, когда без любого одного результата общий результат не имеет смысла.\n\n**Простой пример:**\n```js\nconst results = await Promise.allSettled([\n  Promise.resolve('фото загружено'),\n  Promise.reject('почта не отправлена')\n])\n```\nМы увидим результат обеих операций и сможем отдельно показать, что получилось, а что нет.",
     "level": "middle",
     "tags": ["all-settled", "promise-all"],
     "enabled": true
@@ -54,7 +54,7 @@
     "topicId": "javascript",
     "sectionId": "promises",
     "question": "Чем `Promise.any` отличается от `Promise.race`?",
-    "answer": "`race` завершается по первому settled Promise — успешному или ошибочному. `any` ждёт первый **успешный** результат и игнорирует отдельные ошибки; если отклонятся все участники, он вернёт `AggregateError`.",
+    "answer": "`race` завершается по первому settled Promise — успешному или ошибочному. `any` ждёт первый **успешный** результат и игнорирует отдельные ошибки; если отклонятся все участники, он вернёт `AggregateError`.\n\n**Простой пример:**\n```js\nconst data = await Promise.any([\n  fetch('/server-1'),\n  fetch('/server-2')\n])\n```\nЕсли первый сервер упадёт, `any` всё ещё сможет вернуть успешный ответ второго.",
     "level": "middle",
     "tags": ["promise-any", "promise-race"],
     "enabled": true
@@ -64,7 +64,7 @@
     "topicId": "javascript",
     "sectionId": "promises",
     "question": "Почему последовательные `await` могут быть медленнее `Promise.all`?",
-    "answer": "При последовательных `await` вторая независимая операция начинается только после завершения первой. Если операции не зависят друг от друга, их можно запустить одновременно и затем ожидать через `Promise.all`. Это сокращает общее время примерно до длительности самой медленной операции, а не суммы всех длительностей.",
+    "answer": "При последовательных `await` вторая независимая операция начинается только после завершения первой. Если операции не зависят друг от друга, их можно запустить одновременно и затем ожидать через `Promise.all`. Это сокращает общее время примерно до длительности самой медленной операции, а не суммы всех длительностей.\n\n**Простой пример:**\n```js\nconst [user, posts] = await Promise.all([\n  loadUser(),\n  loadPosts()\n])\n```\nПользователь и посты загружаются одновременно, потому что одна операция не ждёт другую.",
     "level": "middle",
     "tags": ["async-await", "promise-all", "performance"],
     "enabled": true
@@ -74,7 +74,7 @@
     "topicId": "javascript",
     "sectionId": "promises",
     "question": "Может ли `finally` изменить результат Promise-цепочки?",
-    "answer": "Обычно `finally` пропускает исходное значение или ошибку дальше и используется для очистки ресурсов. Но если callback `finally` сам выбросит ошибку или вернёт rejected Promise, новая ошибка заменит прежний результат цепочки.",
+    "answer": "Обычно `finally` пропускает исходное значение или ошибку дальше и используется для очистки ресурсов. Но если callback `finally` сам выбросит ошибку или вернёт rejected Promise, новая ошибка заменит прежний результат цепочки.\n\n**Простой пример:**\n```js\nshowLoader()\nloadData()\n  .then(showData)\n  .catch(showError)\n  .finally(hideLoader)\n```\nЗагрузчик скроется и при успехе, и при ошибке — именно для такой общей очистки удобен `finally`.",
     "level": "advanced",
     "tags": ["promise", "finally", "errors"],
     "enabled": true
