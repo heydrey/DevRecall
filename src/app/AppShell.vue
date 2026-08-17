@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { ChartNoAxesColumnIncreasing, House, Layers3, Star } from '@lucide/vue'
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
+
+const route = useRoute()
+const hideNavigation = computed(() => Boolean(route.meta.hideNavigation))
 
 const navigationItems = [
   { to: '/', label: 'Главная', icon: House },
@@ -11,12 +15,12 @@ const navigationItems = [
 </script>
 
 <template>
-  <div class="app-shell">
-    <main class="app-content">
+  <div class="app-shell" :class="{ 'app-shell--focused': hideNavigation }">
+    <main class="app-content" :class="{ 'app-content--focused': hideNavigation }">
       <RouterView />
     </main>
 
-    <nav class="bottom-nav" aria-label="Основная навигация">
+    <nav v-if="!hideNavigation" class="bottom-nav" aria-label="Основная навигация">
       <RouterLink
         v-for="item in navigationItems"
         :key="item.to"
@@ -40,6 +44,12 @@ const navigationItems = [
   min-height: 100dvh;
   margin: 0 auto;
   padding: 24px 18px calc(104px + env(safe-area-inset-bottom));
+}
+
+.app-content--focused {
+  width: 100%;
+  max-width: none;
+  padding: 0;
 }
 
 .bottom-nav {
