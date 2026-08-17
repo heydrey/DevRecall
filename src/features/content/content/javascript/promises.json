@@ -1,0 +1,82 @@
+[
+  {
+    "id": "js-promises-001",
+    "topicId": "javascript",
+    "sectionId": "promises",
+    "question": "Какие состояния есть у Promise и может ли выполненный Promise изменить результат?",
+    "answer": "Promise начинается в состоянии `pending`, затем один раз переходит в `fulfilled` или `rejected`. После выполнения состояние и результат зафиксированы: повторные вызовы `resolve` или `reject` игнорируются.",
+    "level": "basic",
+    "tags": ["promise", "states"],
+    "enabled": true
+  },
+  {
+    "id": "js-promises-002",
+    "topicId": "javascript",
+    "sectionId": "promises",
+    "question": "Что возвращает метод `then`?",
+    "answer": "`then` всегда возвращает **новый Promise**. Если обработчик возвращает обычное значение, новый Promise выполняется с ним. Если возвращается Promise или thenable, новый Promise принимает его состояние. Если обработчик выбрасывает ошибку, новый Promise отклоняется.",
+    "level": "basic",
+    "tags": ["promise", "then", "chaining"],
+    "enabled": true
+  },
+  {
+    "id": "js-promises-003",
+    "topicId": "javascript",
+    "sectionId": "promises",
+    "question": "Как ошибка проходит по цепочке Promise?",
+    "answer": "Ошибка, выброшенная в executor или обработчике `then`, превращается в rejected Promise и проходит вниз по цепочке до ближайшего обработчика отклонения — `catch` или второго аргумента `then`. Если `catch` успешно возвращает значение, цепочка после него снова становится fulfilled.",
+    "level": "middle",
+    "tags": ["promise", "errors", "catch"],
+    "enabled": true
+  },
+  {
+    "id": "js-promises-004",
+    "topicId": "javascript",
+    "sectionId": "promises",
+    "question": "Как ведёт себя `Promise.all`, если одна операция завершается ошибкой?",
+    "answer": "Результирующий Promise отклоняется сразу после первого полученного rejection и отдаёт эту ошибку. Остальные операции при этом автоматически не отменяются и могут продолжить работу. Для отмены нужен отдельный механизм, например `AbortController`, если операция его поддерживает.",
+    "level": "middle",
+    "tags": ["promise-all", "errors", "concurrency"],
+    "enabled": true
+  },
+  {
+    "id": "js-promises-005",
+    "topicId": "javascript",
+    "sectionId": "promises",
+    "question": "Когда использовать `Promise.allSettled` вместо `Promise.all`?",
+    "answer": "`allSettled` нужен, когда важен результат каждой независимой операции, даже если некоторые завершились ошибкой. Он ждёт все Promise и возвращает объекты со статусом `fulfilled` или `rejected`. `Promise.all` лучше, когда без любого одного результата общий результат не имеет смысла.",
+    "level": "middle",
+    "tags": ["all-settled", "promise-all"],
+    "enabled": true
+  },
+  {
+    "id": "js-promises-006",
+    "topicId": "javascript",
+    "sectionId": "promises",
+    "question": "Чем `Promise.any` отличается от `Promise.race`?",
+    "answer": "`race` завершается по первому settled Promise — успешному или ошибочному. `any` ждёт первый **успешный** результат и игнорирует отдельные ошибки; если отклонятся все участники, он вернёт `AggregateError`.",
+    "level": "middle",
+    "tags": ["promise-any", "promise-race"],
+    "enabled": true
+  },
+  {
+    "id": "js-promises-007",
+    "topicId": "javascript",
+    "sectionId": "promises",
+    "question": "Почему последовательные `await` могут быть медленнее `Promise.all`?",
+    "answer": "При последовательных `await` вторая независимая операция начинается только после завершения первой. Если операции не зависят друг от друга, их можно запустить одновременно и затем ожидать через `Promise.all`. Это сокращает общее время примерно до длительности самой медленной операции, а не суммы всех длительностей.",
+    "level": "middle",
+    "tags": ["async-await", "promise-all", "performance"],
+    "enabled": true
+  },
+  {
+    "id": "js-promises-008",
+    "topicId": "javascript",
+    "sectionId": "promises",
+    "question": "Может ли `finally` изменить результат Promise-цепочки?",
+    "answer": "Обычно `finally` пропускает исходное значение или ошибку дальше и используется для очистки ресурсов. Но если callback `finally` сам выбросит ошибку или вернёт rejected Promise, новая ошибка заменит прежний результат цепочки.",
+    "level": "advanced",
+    "tags": ["promise", "finally", "errors"],
+    "enabled": true
+  }
+]

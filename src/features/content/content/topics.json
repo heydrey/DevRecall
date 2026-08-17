@@ -1,0 +1,34 @@
+[
+  {
+    "id": "javascript",
+    "title": "JavaScript",
+    "description": "Язык, браузерная среда, асинхронность и вопросы уровня технического собеседования.",
+    "accent": "#f1c40f",
+    "sections": [
+      {
+        "id": "fundamentals",
+        "topicId": "javascript",
+        "title": "Основы языка",
+        "description": "Типы, области видимости, this и прототипы."
+      },
+      {
+        "id": "event-loop",
+        "topicId": "javascript",
+        "title": "Event Loop",
+        "description": "Стек вызовов, задачи, микрозадачи и рендеринг."
+      },
+      {
+        "id": "promises",
+        "topicId": "javascript",
+        "title": "Promise и async/await",
+        "description": "Композиция асинхронных операций и обработка ошибок."
+      },
+      {
+        "id": "closures",
+        "topicId": "javascript",
+        "title": "Замыкания",
+        "description": "Лексическое окружение, приватное состояние и память."
+      }
+    ]
+  }
+]
