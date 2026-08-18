@@ -1,0 +1,92 @@
+[
+  {
+    "id": "html-semantics-001",
+    "topicId": "html-css",
+    "sectionId": "html-semantics",
+    "question": "Что такое семантическая вёрстка и зачем она нужна?",
+    "answer": "Семантическая вёрстка использует HTML-элементы по их смыслу: button для действия, nav для навигации, main для основного содержимого, article для самостоятельного материала. Это помогает браузерам, поисковым системам, скринридерам и разработчикам понимать структуру страницы. Внешне div можно оформить так же, но смысла у него не появится.\n\n**Простой пример:**\n~~~html\n<header>Логотип</header>\n<nav>Ссылки меню</nav>\n<main>\n  <article>Статья</article>\n</main>\n<footer>Контакты</footer>\n~~~",
+    "level": "basic",
+    "tags": ["html", "semantics", "accessibility"],
+    "enabled": true
+  },
+  {
+    "id": "html-semantics-002",
+    "topicId": "html-css",
+    "sectionId": "html-semantics",
+    "question": "Почему для клика лучше использовать button, а не div?",
+    "answer": "button уже имеет нужную семантику и доступен с клавиатуры: на него можно перейти Tab и активировать Enter или пробелом. Скринридер объявит его кнопкой. Для div всё это пришлось бы вручную воспроизводить через tabindex, роль и обработчики клавиатуры. Ссылка подходит для перехода, кнопка — для действия.\n\n**Простой пример:**\n~~~html\n<button type=\"button\">Открыть меню</button>\n<a href=\"/profile\">Перейти в профиль</a>\n~~~\nПервый элемент выполняет действие на странице, второй меняет адрес.",
+    "level": "basic",
+    "tags": ["button", "accessibility", "html"],
+    "enabled": true
+  },
+  {
+    "id": "css-layout-001",
+    "topicId": "html-css",
+    "sectionId": "css-layout",
+    "question": "Чем отличаются значения position: relative, absolute, fixed и sticky?",
+    "answer": "relative оставляет элемент в обычном потоке и создаёт точку отсчёта для вложенного absolute. absolute убирает элемент из потока и размещает относительно ближайшего позиционированного предка. fixed привязывает его к окну браузера. sticky ведёт себя обычно, пока при прокрутке не достигнет указанной границы, после чего временно прилипает.\n\n**Простой пример:**\n~~~css\n.card { position: relative; }\n.card__badge { position: absolute; top: 8px; right: 8px; }\n.chat-button { position: fixed; right: 20px; bottom: 20px; }\n.table-head { position: sticky; top: 0; }\n~~~",
+    "level": "basic",
+    "tags": ["css", "position"],
+    "enabled": true
+  },
+  {
+    "id": "css-layout-002",
+    "topicId": "html-css",
+    "sectionId": "css-layout",
+    "question": "Как устроен Flexbox?",
+    "answer": "Flexbox размещает дочерние элементы вдоль главной и поперечной осей. Направление главной оси задаёт flex-direction. justify-content выравнивает по главной оси, align-items — по поперечной. gap задаёт расстояние между элементами. Flexbox особенно удобен для строки или колонки компонентов.\n\n**Простой пример:**\n~~~css\n.toolbar {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 12px;\n}\n~~~\nТак логотип окажется слева, действия справа, а элементы будут выровнены по центру.",
+    "level": "basic",
+    "tags": ["css", "flexbox"],
+    "enabled": true
+  },
+  {
+    "id": "css-layout-003",
+    "topicId": "html-css",
+    "sectionId": "css-layout",
+    "question": "Что такое адаптивная вёрстка?",
+    "answer": "Адаптивная вёрстка подстраивается под размер экрана и возможности устройства. Для этого используют гибкие размеры, Grid или Flexbox, изображения с ограниченной шириной и медиазапросы. Хороший подход mobile first сначала описывает простой мобильный вариант, а затем расширяет его для больших экранов.\n\n**Простой пример:**\n~~~css\n.cards { display: grid; grid-template-columns: 1fr; gap: 16px; }\nimg { max-width: 100%; height: auto; }\n\n@media (min-width: 768px) {\n  .cards { grid-template-columns: repeat(2, 1fr); }\n}\n~~~",
+    "level": "basic",
+    "tags": ["responsive", "media-query", "mobile-first"],
+    "enabled": true
+  },
+  {
+    "id": "css-organization-001",
+    "topicId": "html-css",
+    "sectionId": "css-organization",
+    "question": "Чем псевдокласс отличается от псевдоэлемента?",
+    "answer": "Псевдокласс выбирает существующий элемент в определённом состоянии или положении, например hover, focus или first-child. Псевдоэлемент выбирает виртуальную часть элемента или создаёт оформительскую область, например before, after или first-line. Для псевдоэлементов принято использовать двойное двоеточие.\n\n**Простой пример:**\n~~~css\n.button:hover { background: navy; }       /* состояние кнопки */\n.title::before { content: '★ '; }         /* виртуальная часть */\n~~~",
+    "level": "basic",
+    "tags": ["pseudo-class", "pseudo-element", "css"],
+    "enabled": true
+  },
+  {
+    "id": "css-organization-002",
+    "topicId": "html-css",
+    "sectionId": "css-organization",
+    "question": "Что такое БЭМ?",
+    "answer": "БЭМ — соглашение об именовании CSS-классов через блок, элемент и модификатор. Блок — самостоятельный компонент, элемент — его часть, модификатор — вариант состояния или внешнего вида. Такой формат делает связи заметными и уменьшает случайные пересечения стилей.\n\n**Простой пример:**\n~~~html\n<article class=\"card card--featured\">\n  <h2 class=\"card__title\">Заголовок</h2>\n</article>\n~~~\nЗдесь card — блок, card__title — элемент, card--featured — модификатор.",
+    "level": "basic",
+    "tags": ["bem", "css", "naming"],
+    "enabled": true
+  },
+  {
+    "id": "css-organization-003",
+    "topicId": "html-css",
+    "sectionId": "css-organization",
+    "question": "Зачем нужны SASS и SCSS?",
+    "answer": "Sass — CSS-препроцессор, а SCSS — его популярный синтаксис, похожий на обычный CSS. Он добавляет переменные, вложенность, примеси, функции и разбиение на файлы. Затем код компилируется в обычный CSS, который понимает браузер. Сейчас у CSS есть собственные переменные и новые возможности, поэтому препроцессор нужен не всегда.\n\n**Простой пример:**\n~~~scss\n$primary: #6548d9;\n\n.button {\n  background: $primary;\n  &:hover { opacity: 0.85; }\n}\n~~~",
+    "level": "basic",
+    "tags": ["sass", "scss", "css"],
+    "enabled": true
+  },
+  {
+    "id": "css-organization-004",
+    "topicId": "html-css",
+    "sectionId": "css-organization",
+    "question": "Что означает кросс-браузерная вёрстка?",
+    "answer": "Это вёрстка, которая остаётся рабочей в поддерживаемых браузерах. Не требуется добиваться абсолютной одинаковости каждого пикселя, но функции, содержимое и основные состояния должны работать. Разработчик проверяет таблицы совместимости, использует Autoprefixer, progressive enhancement и тестирует реальные целевые браузеры.\n\n**Простой пример:**\nЕсли новое CSS-свойство не поддерживается старым браузером, сначала задают простой запасной стиль, а ниже — улучшенный. Браузер применит тот вариант, который понимает.",
+    "level": "middle",
+    "tags": ["cross-browser", "css", "compatibility"],
+    "enabled": true
+  }
+]

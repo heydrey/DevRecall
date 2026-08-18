@@ -21,13 +21,22 @@ const learned = computed(() => cards.value.filter((card) => progressStore.progre
 const due = computed(() => cards.value.filter((card) => progressStore.isDue(card.id)).length)
 const difficult = computed(() => progressStore.difficultCards(cards.value).length)
 const percent = computed(() => cards.value.length ? Math.round((learned.value / cards.value.length) * 100) : 0)
+const topicBadge = computed(() => {
+  const words = topic.value?.title.split(/\s+/) ?? []
+  return words.length > 1
+    ? words.slice(0, 2).map((word) => word[0]).join('').toUpperCase()
+    : words[0]?.slice(0, 3).toUpperCase() ?? ''
+})
 </script>
 
 <template>
   <div v-if="topic" class="page-stack">
     <RouterLink class="back-link" to="/topics"><ArrowLeft :size="18" />Все темы</RouterLink>
     <header class="topic-hero">
-      <div class="topic-hero__badge">JS</div>
+      <div
+        class="topic-hero__badge"
+        :style="{ background: topic.accent + '22', color: topic.accent }"
+      >{{ topicBadge }}</div>
       <span class="eyebrow">Тема</span>
       <h1>{{ topic.title }}</h1>
       <p>{{ topic.description }}</p>

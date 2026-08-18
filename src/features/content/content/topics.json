@@ -2,33 +2,218 @@
   {
     "id": "javascript",
     "title": "JavaScript",
-    "description": "Язык, браузерная среда, асинхронность и вопросы уровня технического собеседования.",
+    "description": "Язык, асинхронность, работа с данными и частые вопросы собеседований.",
     "accent": "#f1c40f",
     "sections": [
-      {
-        "id": "fundamentals",
-        "topicId": "javascript",
-        "title": "Основы языка",
-        "description": "Типы, области видимости, this и прототипы."
-      },
-      {
-        "id": "event-loop",
-        "topicId": "javascript",
-        "title": "Event Loop",
-        "description": "Стек вызовов, задачи, микрозадачи и рендеринг."
-      },
-      {
-        "id": "promises",
-        "topicId": "javascript",
-        "title": "Promise и async/await",
-        "description": "Композиция асинхронных операций и обработка ошибок."
-      },
-      {
-        "id": "closures",
-        "topicId": "javascript",
-        "title": "Замыкания",
-        "description": "Лексическое окружение, приватное состояние и память."
-      }
+      { "id": "fundamentals", "topicId": "javascript", "title": "Основы языка", "description": "Типы, области видимости, this и прототипы." },
+      { "id": "event-loop", "topicId": "javascript", "title": "Event Loop", "description": "Стек вызовов, задачи, микрозадачи и рендеринг." },
+      { "id": "promises", "topicId": "javascript", "title": "Promise и async/await", "description": "Асинхронные операции и обработка ошибок." },
+      { "id": "closures", "topicId": "javascript", "title": "Замыкания", "description": "Лексическое окружение, состояние и память." },
+      { "id": "collections-functions", "topicId": "javascript", "title": "Функции и коллекции", "description": "Массивы, строки, Set, классы, rest и spread." },
+      { "id": "js-practice", "topicId": "javascript", "title": "Практические задачи", "description": "Короткие алгоритмы и разбор типичных решений." }
+    ]
+  },
+  {
+    "id": "vue",
+    "title": "Vue",
+    "description": "Компоненты, реактивность, жизненный цикл, Vue Router и управление состоянием.",
+    "accent": "#42b883",
+    "sections": [
+      { "id": "vue-components", "topicId": "vue", "title": "Компоненты", "description": "Props, события, слоты и связь компонентов." },
+      { "id": "vue-reactivity", "topicId": "vue", "title": "Реактивность", "description": "Composition API, watch, computed и nextTick." },
+      { "id": "vue-rendering", "topicId": "vue", "title": "Шаблоны и рендеринг", "description": "Директивы, стили, переходы и оптимизация." },
+      { "id": "vue-ecosystem", "topicId": "vue", "title": "Экосистема", "description": "Store, Router, тестирование и возможности Vue 3." }
+    ]
+  },
+  {
+    "id": "html-css",
+    "title": "HTML и CSS",
+    "description": "Семантическая, адаптивная и поддерживаемая вёрстка.",
+    "accent": "#e76f51",
+    "sections": [
+      { "id": "html-semantics", "topicId": "html-css", "title": "HTML и семантика", "description": "Смысл тегов и доступная структура страницы." },
+      { "id": "css-layout", "topicId": "html-css", "title": "Раскладка CSS", "description": "Position, Flexbox и адаптивность." },
+      { "id": "css-organization", "topicId": "html-css", "title": "Организация стилей", "description": "БЭМ, SCSS, псевдоклассы и совместимость." }
+    ]
+  },
+  {
+    "id": "browser-web",
+    "title": "Браузер и Web",
+    "description": "Как браузер строит страницу, выполняет код и общается с сервером.",
+    "accent": "#3a86ff",
+    "sections": [
+      { "id": "browser-dom", "topicId": "browser-web", "title": "DOM", "description": "DOM-дерево, Shadow DOM и обновление страницы." },
+      { "id": "browser-runtime", "topicId": "browser-web", "title": "Работа браузера", "description": "Процессы, потоки, Web Workers и загрузка URL." }
+    ]
+  },
+  {
+    "id": "http",
+    "title": "HTTP и сеть",
+    "description": "Запросы, методы, cookie, CORS и клиент-серверное взаимодействие.",
+    "accent": "#4361ee",
+    "sections": [
+      { "id": "http-basics", "topicId": "http", "title": "Основы HTTP", "description": "Структура запросов, ответы и методы." },
+      { "id": "http-security", "topicId": "http", "title": "Браузерная безопасность", "description": "Cookie, CORS и передача учётных данных." }
+    ]
+  },
+  {
+    "id": "architecture",
+    "title": "Архитектура",
+    "description": "Подходы и принципы, которые помогают создавать понятные приложения.",
+    "accent": "#8338ec",
+    "sections": [
+      { "id": "architecture-principles", "topicId": "architecture", "title": "Принципы", "description": "ООП, ФП, SOLID, DRY и KISS." },
+      { "id": "architecture-web", "topicId": "architecture", "title": "Архитектура Web", "description": "SPA, SSR, паттерны и инструменты качества." }
+    ]
+  },
+  {
+    "id": "testing",
+    "title": "Тестирование",
+    "description": "Проверка компонентов и изоляция кода от внешних сервисов.",
+    "accent": "#2a9d8f",
+    "sections": [
+      { "id": "testing-unit", "topicId": "testing", "title": "Unit-тесты", "description": "Назначение, структура и тестирование Vue-компонентов." },
+      { "id": "testing-mocks", "topicId": "testing", "title": "Моки", "description": "Подмена API и контроль зависимостей." }
+    ]
+  },
+  {
+    "id": "typescript",
+    "title": "TypeScript",
+    "description": "Статическая типизация JavaScript, интерфейсы, generics и безопасная работа с данными.",
+    "accent": "#3178c6",
+    "sections": [
+      { "id": "ts-basics", "topicId": "typescript", "title": "Основы TypeScript", "description": "Типизация, inference и специальные типы." },
+      { "id": "ts-advanced", "topicId": "typescript", "title": "Составные типы", "description": "Generics, narrowing и utility types." }
+    ]
+  },
+  {
+    "id": "php",
+    "title": "PHP и ООП",
+    "description": "Основы объектной модели PHP, зависимости, исключения и генераторы.",
+    "accent": "#777bb4",
+    "sections": [
+      { "id": "php-oop", "topicId": "php", "title": "ООП в PHP", "description": "Классы, интерфейсы, наследование и области доступа." },
+      { "id": "php-runtime", "topicId": "php", "title": "Язык и экосистема", "description": "Namespace, Composer, исключения и генераторы." }
+    ]
+  },
+  {
+    "id": "laravel",
+    "title": "Laravel",
+    "description": "Жизненный цикл запроса, контейнер, Eloquent, очереди и транзакции.",
+    "accent": "#ff2d20",
+    "sections": [
+      { "id": "laravel-core", "topicId": "laravel", "title": "Ядро Laravel", "description": "Container, providers, middleware и авторизация." },
+      { "id": "laravel-data", "topicId": "laravel", "title": "Данные и фоновые задачи", "description": "Eloquent, транзакции, jobs и queues." }
+    ]
+  },
+  {
+    "id": "sql",
+    "title": "SQL",
+    "description": "Соединения, группировка, подзапросы и практические выборки.",
+    "accent": "#e38c00",
+    "sections": [
+      { "id": "sql-basics", "topicId": "sql", "title": "Запросы SQL", "description": "JOIN, WHERE, GROUP BY и объединение результатов." },
+      { "id": "sql-analytics", "topicId": "sql", "title": "Аналитические запросы", "description": "Оконные функции, CTE и задачи собеседований." }
+    ]
+  },
+  {
+    "id": "postgresql",
+    "title": "PostgreSQL",
+    "description": "Индексы, планы запросов, транзакции и устройство PostgreSQL.",
+    "accent": "#336791",
+    "sections": [
+      { "id": "postgres-indexes", "topicId": "postgresql", "title": "Индексы и запросы", "description": "B-tree, GIN и анализ производительности." },
+      { "id": "postgres-transactions", "topicId": "postgresql", "title": "Транзакции", "description": "ACID, MVCC, блокировки и изоляция." }
+    ]
+  },
+  {
+    "id": "postgresql-rls",
+    "title": "PostgreSQL RLS",
+    "description": "Ограничение доступа к строкам и изоляция данных арендаторов.",
+    "accent": "#24557a",
+    "sections": [
+      { "id": "rls-basics", "topicId": "postgresql-rls", "title": "Основы RLS", "description": "Политики, USING, WITH CHECK и роли." },
+      { "id": "rls-practice", "topicId": "postgresql-rls", "title": "RLS на практике", "description": "Multi-tenancy, контекст и проверка безопасности." }
+    ]
+  },
+  {
+    "id": "git",
+    "title": "Git",
+    "description": "Ветки, история, rebase, восстановление и безопасная командная работа.",
+    "accent": "#f05032",
+    "sections": [
+      { "id": "git-history", "topicId": "git", "title": "История Git", "description": "HEAD, reset, revert, reflog и cherry-pick." },
+      { "id": "git-branches", "topicId": "git", "title": "Ветки", "description": "Merge, rebase, конфликты и force push." }
+    ]
+  },
+  {
+    "id": "docker",
+    "title": "Docker",
+    "description": "Образы, контейнеры, сети, тома и воспроизводимое окружение.",
+    "accent": "#2496ed",
+    "sections": [
+      { "id": "docker-basics", "topicId": "docker", "title": "Основы Docker", "description": "Images, containers, Dockerfile и слои." },
+      { "id": "docker-runtime", "topicId": "docker", "title": "Запуск приложений", "description": "Volumes, сети, Compose и диагностика." }
+    ]
+  },
+  {
+    "id": "cicd",
+    "title": "CI/CD",
+    "description": "Автоматическая сборка, тестирование и безопасная доставка приложений.",
+    "accent": "#6c5ce7",
+    "sections": [
+      { "id": "cicd-basics", "topicId": "cicd", "title": "Pipeline", "description": "Stages, jobs, runners, artifacts и cache." },
+      { "id": "cicd-deploy", "topicId": "cicd", "title": "Deployment", "description": "Secrets, registry, rollback и стратегии доставки." }
+    ]
+  },
+  {
+    "id": "kubernetes",
+    "title": "Kubernetes",
+    "description": "Оркестрация контейнеров, сетевой доступ и отказоустойчивый запуск.",
+    "accent": "#326ce5",
+    "sections": [
+      { "id": "k8s-resources", "topicId": "kubernetes", "title": "Ресурсы Kubernetes", "description": "Cluster, Pod, Deployment, Service и Ingress." },
+      { "id": "k8s-operations", "topicId": "kubernetes", "title": "Эксплуатация", "description": "Probes, volumes, limits, обновления и диагностика." }
+    ]
+  },
+  {
+    "id": "rabbitmq",
+    "title": "RabbitMQ",
+    "description": "Асинхронный обмен сообщениями, маршрутизация и надёжная обработка.",
+    "accent": "#ff6600",
+    "sections": [
+      { "id": "rabbitmq-routing", "topicId": "rabbitmq", "title": "Маршрутизация", "description": "Producer, exchange, queue, binding и routing key." },
+      { "id": "rabbitmq-reliability", "topicId": "rabbitmq", "title": "Надёжность", "description": "ACK, retry, DLQ и идемпотентность." }
+    ]
+  },
+  {
+    "id": "security",
+    "title": "Безопасность",
+    "description": "Авторизация, веб-уязвимости и защита пользовательских данных.",
+    "accent": "#d62828",
+    "sections": [
+      { "id": "security-access", "topicId": "security", "title": "Управление доступом", "description": "Authentication, authorization, RBAC и least privilege." },
+      { "id": "security-web", "topicId": "security", "title": "Web-безопасность", "description": "XSS, SQL Injection, CSRF и безопасная обработка файлов." }
+    ]
+  },
+  {
+    "id": "rag",
+    "title": "RAG и LLM",
+    "description": "Поиск знаний для языковых моделей, embeddings, pgvector и качество ответов.",
+    "accent": "#7b2cbf",
+    "sections": [
+      { "id": "rag-basics", "topicId": "rag", "title": "Основы RAG", "description": "Embeddings, chunking, поиск и reranking." },
+      { "id": "rag-pgvector", "topicId": "rag", "title": "pgvector и архитектура", "description": "Хранение векторов, индексы и pipeline приложения." }
+    ]
+  },
+  {
+    "id": "system-design",
+    "title": "System Design",
+    "description": "Масштабирование, отказоустойчивость и взаимодействие сервисов.",
+    "accent": "#264653",
+    "sections": [
+      { "id": "system-design-basics", "topicId": "system-design", "title": "Основы системного дизайна", "description": "Монолит, микросервисы, scaling, cache и load balancer." },
+      { "id": "system-design-reliability", "topicId": "system-design", "title": "Надёжность", "description": "Retry, timeout, consistency и обработка отказов." }
     ]
   }
 ]

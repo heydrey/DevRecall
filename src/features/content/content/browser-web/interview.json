@@ -1,0 +1,62 @@
+[
+  {
+    "id": "browser-dom-001",
+    "topicId": "browser-web",
+    "sectionId": "browser-dom",
+    "question": "Что такое DOM?",
+    "answer": "DOM — объектное представление HTML-документа в памяти браузера. Теги становятся узлами дерева, которые JavaScript может искать, изменять, добавлять и удалять. DOM не равен исходному HTML-файлу: браузер может исправить структуру, а JavaScript — изменить её после загрузки.\n\n**Простой пример:**\n~~~js\nconst title = document.querySelector('h1')\ntitle.textContent = 'Новый заголовок'\ntitle.classList.add('highlighted')\n~~~\nПосле этих строк DOM и видимая страница изменятся, хотя файл на сервере останется прежним.",
+    "level": "basic",
+    "tags": ["dom", "browser"],
+    "enabled": true
+  },
+  {
+    "id": "browser-dom-002",
+    "topicId": "browser-web",
+    "sectionId": "browser-dom",
+    "question": "Что такое Shadow DOM?",
+    "answer": "Shadow DOM создаёт изолированное поддерево внутри элемента. Его внутренняя разметка и стили скрыты от обычных селекторов страницы, а внутренние стили меньше конфликтуют с внешними. Этот механизм используется в Web Components и некоторых встроенных элементах браузера.\n\n**Простой пример:**\n~~~js\nconst host = document.querySelector('#player')\nconst shadow = host.attachShadow({ mode: 'open' })\nshadow.innerHTML = '<style>button { color: red }</style><button>Play</button>'\n~~~\nСтиль этой кнопки не окрасит остальные кнопки страницы.",
+    "level": "middle",
+    "tags": ["shadow-dom", "web-components"],
+    "enabled": true
+  },
+  {
+    "id": "browser-runtime-001",
+    "topicId": "browser-web",
+    "sectionId": "browser-runtime",
+    "question": "Что происходит после ввода URL в адресную строку?",
+    "answer": "Упрощённо браузер разбирает URL, ищет IP-адрес домена через DNS, устанавливает соединение с сервером и для HTTPS выполняет TLS-рукопожатие. Затем отправляет HTTP-запрос, получает ответ, разбирает HTML, загружает CSS, JavaScript и изображения. Из DOM и CSSOM строится дерево отображения, после чего браузер рассчитывает размеры и рисует страницу.\n\n**Простой пример:**\nАдрес example.com для человека — имя. DNS похож на телефонную книгу: находит сетевой адрес сервера, после чего браузер уже может отправить ему запрос.",
+    "level": "middle",
+    "tags": ["url", "dns", "rendering"],
+    "enabled": true
+  },
+  {
+    "id": "browser-runtime-002",
+    "topicId": "browser-web",
+    "sectionId": "browser-runtime",
+    "question": "Чем процесс отличается от потока?",
+    "answer": "Процесс — изолированная работающая программа со своей памятью и ресурсами. Поток — последовательность выполнения внутри процесса; несколько потоков одного процесса обычно разделяют память. Современный браузер использует несколько процессов, например для интерфейса и вкладок, а внутри них — разные потоки для выполнения, сети и других задач.\n\n**Простой пример:**\nПроцесс можно представить отдельной квартирой, а потоки — людьми внутри неё. Люди пользуются общими комнатами квартиры, но жильцы другой квартиры изолированы.",
+    "level": "basic",
+    "tags": ["process", "thread", "browser"],
+    "enabled": true
+  },
+  {
+    "id": "browser-runtime-003",
+    "topicId": "browser-web",
+    "sectionId": "browser-runtime",
+    "question": "Для чего нужны Web Workers?",
+    "answer": "Web Worker выполняет JavaScript в фоновом потоке, чтобы тяжёлые вычисления не блокировали интерфейс. Worker не имеет прямого доступа к DOM. Основной поток и worker обмениваются сообщениями, а передаваемые данные копируются или переносятся. Для обычных сетевых запросов worker чаще всего не нужен, потому что сами запросы уже асинхронны.\n\n**Простой пример:**\n~~~js\n// main.js\nconst worker = new Worker('./worker.js')\nworker.postMessage(1_000_000)\nworker.onmessage = event => console.log(event.data)\n\n// worker.js\nonmessage = event => postMessage(heavyCalculation(event.data))\n~~~",
+    "level": "middle",
+    "tags": ["web-worker", "performance", "threads"],
+    "enabled": true
+  },
+  {
+    "id": "browser-runtime-004",
+    "topicId": "browser-web",
+    "sectionId": "browser-runtime",
+    "question": "Почему тяжёлый JavaScript может заморозить страницу?",
+    "answer": "Основной JavaScript страницы обычно выполняется в том же потоке, который обрабатывает пользовательские события и участвует в обновлении интерфейса. Пока длинная функция не закончится, браузер не сможет вовремя обработать клик или нарисовать следующий кадр. Решение — уменьшать работу, делить её на части или выносить вычисления в worker.\n\n**Простой пример:**\n~~~js\n// Плохой пример: огромный синхронный цикл блокирует интерфейс\nfor (let i = 0; i < 5_000_000_000; i++) {\n  // вычисления\n}\n~~~\nПользователь видит зависание, хотя программа продолжает считать.",
+    "level": "basic",
+    "tags": ["performance", "main-thread", "blocking"],
+    "enabled": true
+  }
+]

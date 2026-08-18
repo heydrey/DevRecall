@@ -39,6 +39,19 @@ const streak = computed(() => {
 const progressPercent = computed(() =>
   cards.value.length ? Math.round((learnedCount.value / cards.value.length) * 100) : 0,
 )
+const topicCardCount = (topicId: string) => cards.value.filter((card) => card.topicId === topicId).length
+const topicProgress = (topicId: string) => {
+  const topicCards = cards.value.filter((card) => card.topicId === topicId)
+  if (!topicCards.length) return 0
+  const started = topicCards.filter((card) => progressStore.progress[card.id]?.repetitions).length
+  return Math.round((started / topicCards.length) * 100)
+}
+const topicBadge = (title: string) => {
+  const words = title.split(/\s+/)
+  return words.length > 1
+    ? words.slice(0, 2).map((word) => word[0]).join('').toUpperCase()
+    : words[0]?.slice(0, 3).toUpperCase() ?? ''
+}
 const greeting = computed(() => {
   const hour = new Date().getHours()
   if (hour < 12) return 'Доброе утро'
@@ -106,13 +119,20 @@ const greeting = computed(() => {
         <div><span class="eyebrow">База знаний</span><h2>Темы</h2></div>
         <RouterLink to="/topics">Все темы</RouterLink>
       </div>
-      <RouterLink v-if="topics[0]" class="topic-preview" to="/topics/javascript">
-        <div class="topic-preview__badge">JS</div>
-        <div class="topic-preview__body">
-          <strong>{{ topics[0].title }}</strong>
-          <span>30 карточек · 4 раздела</span>
+      <RouterLink
+        v-for="topic in topics"
+        :key="topic.id"
+        class="topic-preview"
+        :to="`/topics/${topic.id}`"
+      >
+        <div class="topic-preview__badge" :style="{ background: topic.accent + '22', color: topic.accent }">
+          {{ topicBadge(topic.title) }}
         </div>
-        <span class="topic-preview__percent">{{ progressPercent }}%</span>
+        <div class="topic-preview__body">
+          <strong>{{ topic.title }}</strong>
+          <span>{{ topicCardCount(topic.id) }} карточек · {{ topic.sections.length }} разделов</span>
+        </div>
+        <span class="topic-preview__percent">{{ topicProgress(topic.id) }}%</span>
       </RouterLink>
     </section>
   </div>
@@ -146,6 +166,7 @@ const greeting = computed(() => {
 .progress-track { height:9px; margin-top:20px; overflow:hidden; border-radius:999px; background:var(--surface-muted); }
 .progress-track span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--primary),#a58fff); }
 .topic-preview { display:flex; align-items:center; gap:14px; padding:16px; border:1px solid var(--border-subtle); border-radius:24px; background:var(--surface); color:inherit; text-decoration:none; box-shadow:var(--shadow-sm); }
+.topic-preview + .topic-preview { margin-top:10px; }
 .topic-preview__badge { display:grid; width:50px; height:50px; flex:none; place-items:center; border-radius:17px; background:#fff4b8; color:#6d5700; font-weight:900; }
 .topic-preview__body { display:flex; min-width:0; flex:1; flex-direction:column; gap:4px; }
 .topic-preview__body span { color:var(--text-muted); font-size:.82rem; }

@@ -1,0 +1,82 @@
+[
+  {
+    "id": "js-collections-functions-001",
+    "topicId": "javascript",
+    "sectionId": "collections-functions",
+    "question": "Какие типы данных есть в JavaScript?",
+    "answer": "В JavaScript есть примитивы: string, number, bigint, boolean, undefined, symbol и null. Все остальные значения относятся к объектам: обычные объекты, массивы, функции, даты и так далее. Примитив представляет само значение, а объект хранится и передаётся по ссылке.\n\n**Простой пример:**\n~~~js\nconst name = 'Анна'       // string\nconst age = 25            // number\nconst active = true       // boolean\nconst user = { name }     // object\nconst skills = ['JS']     // object, хотя это массив\n\nconsole.log(typeof name)  // 'string'\nconsole.log(typeof user)  // 'object'\n~~~\nОсобенность языка: typeof null возвращает 'object'. Это старое историческое поведение, а не признак того, что null действительно объект.",
+    "level": "basic",
+    "tags": ["types", "primitives", "objects"],
+    "enabled": true
+  },
+  {
+    "id": "js-collections-functions-002",
+    "topicId": "javascript",
+    "sectionId": "collections-functions",
+    "question": "Чем функция-конструктор отличается от класса?",
+    "answer": "Оба способа позволяют создавать однотипные объекты через new. Классы появились позже и дают более понятный синтаксис для конструктора, методов, наследования и приватных полей. Внутри классы всё равно используют прототипный механизм JavaScript. Метод класса автоматически попадает в прототип, поэтому не создаётся заново для каждого объекта.\n\n**Простой пример:**\n~~~js\nclass User {\n  constructor(name) {\n    this.name = name\n  }\n\n  sayHi() {\n    return 'Привет, я ' + this.name\n  }\n}\n\nconst user = new User('Маша')\nconsole.log(user.sayHi())\n~~~\nФункция-конструктор может сделать то же самое, но класс обычно легче читать.",
+    "level": "basic",
+    "tags": ["class", "constructor", "prototype"],
+    "enabled": true
+  },
+  {
+    "id": "js-collections-functions-003",
+    "topicId": "javascript",
+    "sectionId": "collections-functions",
+    "question": "Для чего нужны методы call, apply и bind?",
+    "answer": "Они позволяют явно указать, каким будет this внутри обычной функции. call вызывает функцию сразу и принимает аргументы по одному. apply тоже вызывает сразу, но получает аргументы массивом. bind не вызывает функцию, а возвращает новую функцию с закреплённым this.\n\n**Простой пример:**\n~~~js\nfunction greet(greeting) {\n  return greeting + ', ' + this.name\n}\n\nconst user = { name: 'Олег' }\n\ngreet.call(user, 'Привет')\ngreet.apply(user, ['Добрый день'])\n\nconst greetOleg = greet.bind(user)\ngreetOleg('Здравствуй')\n~~~",
+    "level": "middle",
+    "tags": ["this", "call", "apply", "bind"],
+    "enabled": true
+  },
+  {
+    "id": "js-collections-functions-004",
+    "topicId": "javascript",
+    "sectionId": "collections-functions",
+    "question": "Чем map, filter, find и reduce отличаются друг от друга?",
+    "answer": "map преобразует каждый элемент и возвращает массив той же длины. filter оставляет только подходящие элементы. find возвращает первый подходящий элемент или undefined. reduce последовательно собирает из массива одно итоговое значение. Эти методы не меняют исходный массив, если callback сам его не изменяет.\n\n**Простой пример:**\n~~~js\nconst numbers = [1, 2, 3, 4]\n\nnumbers.map(n => n * 2)                 // [2, 4, 6, 8]\nnumbers.filter(n => n % 2 === 0)        // [2, 4]\nnumbers.find(n => n > 2)                // 3\nnumbers.reduce((sum, n) => sum + n, 0)  // 10\n~~~\nВыбирайте метод по смыслу результата, а не только потому, что с его помощью можно перебрать массив.",
+    "level": "basic",
+    "tags": ["array", "map", "filter", "reduce"],
+    "enabled": true
+  },
+  {
+    "id": "js-collections-functions-005",
+    "topicId": "javascript",
+    "sectionId": "collections-functions",
+    "question": "Когда нужен Set и чем он отличается от массива?",
+    "answer": "Set — коллекция уникальных значений. Одно и то же значение нельзя добавить в неё дважды. У Set нет доступа по числовому индексу, зато удобно быстро проверять наличие через has. Массив лучше, когда важны порядок, индексы и методы вроде map.\n\n**Простой пример:**\n~~~js\nconst names = ['Аня', 'Борис', 'Аня']\nconst uniqueNames = [...new Set(names)]\n\nconsole.log(uniqueNames) // ['Аня', 'Борис']\n~~~\nЧастый сценарий — убрать повторяющиеся примитивные значения из массива.",
+    "level": "basic",
+    "tags": ["set", "array", "collections"],
+    "enabled": true
+  },
+  {
+    "id": "js-collections-functions-006",
+    "topicId": "javascript",
+    "sectionId": "collections-functions",
+    "question": "Чем rest-параметр отличается от spread-синтаксиса?",
+    "answer": "Они используют одинаковые три точки, но работают в противоположных направлениях. Rest собирает несколько значений в один массив. Spread раскрывает массив или объект на отдельные значения или свойства. Смысл определяется местом использования.\n\n**Простой пример:**\n~~~js\nfunction sum(...numbers) { // rest: собрали аргументы\n  return numbers.reduce((total, n) => total + n, 0)\n}\n\nconst values = [2, 3, 4]\nsum(...values)             // spread: раскрыли массив\n\nconst user = { name: 'Ира' }\nconst copy = { ...user, age: 24 }\n~~~",
+    "level": "basic",
+    "tags": ["rest", "spread", "functions"],
+    "enabled": true
+  },
+  {
+    "id": "js-collections-functions-007",
+    "topicId": "javascript",
+    "sectionId": "collections-functions",
+    "question": "Как сделать глубокую копию объекта?",
+    "answer": "Для современных данных обычно используют structuredClone: он копирует вложенные объекты, массивы, Map, Set и многие другие встроенные типы. Способ через JSON ограничен: он теряет undefined, функции и информацию о некоторых типах, а циклические ссылки вызывают ошибку.\n\n**Простой пример:**\n~~~js\nconst user = {\n  name: 'Лена',\n  address: { city: 'Москва' }\n}\n\nconst copy = structuredClone(user)\ncopy.address.city = 'Казань'\n\nconsole.log(user.address.city) // 'Москва'\n~~~\nДля экземпляров собственных классов или специальных правил копирования иногда нужна отдельная функция.",
+    "level": "middle",
+    "tags": ["copy", "structuredClone", "objects"],
+    "enabled": true
+  },
+  {
+    "id": "js-collections-functions-008",
+    "topicId": "javascript",
+    "sectionId": "collections-functions",
+    "question": "Какие полезные методы строк важно знать?",
+    "answer": "Часто применяются includes для поиска части строки, startsWith и endsWith для проверки начала и конца, slice для получения части, split для превращения строки в массив и trim для удаления пробелов по краям. Строки неизменяемы: метод возвращает новую строку, а исходную не меняет.\n\n**Простой пример:**\n~~~js\nconst text = '  JavaScript,Vue  '\nconst skills = text.trim().split(',')\n\nconsole.log(skills)               // ['JavaScript', 'Vue']\nconsole.log(text.includes('Vue')) // true\n~~~",
+    "level": "basic",
+    "tags": ["string", "methods"],
+    "enabled": true
+  }
+]

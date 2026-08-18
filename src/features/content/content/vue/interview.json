@@ -1,0 +1,152 @@
+[
+  {
+    "id": "vue-components-001",
+    "topicId": "vue",
+    "sectionId": "vue-components",
+    "question": "Как передавать данные от родительского компонента к дочернему и обратно?",
+    "answer": "Родитель передаёт данные вниз через props. Дочерний компонент не должен менять prop напрямую: когда нужно сообщить об изменении, он отправляет событие через emit, а родитель обновляет своё состояние. Получается однонаправленный поток данных, который легче понимать и отлаживать.\n\n**Простой пример:**\n~~~vue\n<!-- Parent.vue -->\n<UserCard :name=\"userName\" @rename=\"userName = $event\" />\n\n<!-- UserCard.vue -->\n<script setup>\ndefineProps({ name: String })\nconst emit = defineEmits(['rename'])\n</script>\n<button @click=\"emit('rename', 'Анна')\">Сменить имя</button>\n~~~",
+    "level": "basic",
+    "tags": ["props", "emit", "components"],
+    "enabled": true
+  },
+  {
+    "id": "vue-components-002",
+    "topicId": "vue",
+    "sectionId": "vue-components",
+    "question": "Как связать компоненты, которые не являются родителем и ребёнком?",
+    "answer": "Для небольшого дерева данные можно поднять до ближайшего общего родителя и передать через props и события. Для глубокой передачи есть provide/inject. Если состояние нужно многим несвязанным экранам, удобнее хранилище Pinia или Vuex. Глобальная шина событий возможна, но её связи трудно отслеживать.\n\n**Простой пример:**\n~~~js\n// Родитель предоставляет тему\nprovide('theme', ref('dark'))\n\n// Любой потомок получает её\nconst theme = inject('theme')\n~~~\nВыбор зависит от масштаба: не стоит подключать глобальное хранилище ради одного значения.",
+    "level": "middle",
+    "tags": ["provide", "inject", "pinia"],
+    "enabled": true
+  },
+  {
+    "id": "vue-components-003",
+    "topicId": "vue",
+    "sectionId": "vue-components",
+    "question": "Что такое слоты во Vue?",
+    "answer": "Слот — место внутри дочернего компонента, куда родитель может вставить свой шаблон. Так компонент задаёт общую оболочку, но не диктует всё содержимое. Именованные слоты позволяют сделать несколько областей, например заголовок и подвал. Scoped slots дополнительно передают данные из дочернего компонента в шаблон родителя.\n\n**Простой пример:**\n~~~vue\n<!-- BaseCard.vue -->\n<article>\n  <slot name=\"title\" />\n  <slot />\n</article>\n\n<!-- Использование -->\n<BaseCard>\n  <template #title><h2>Профиль</h2></template>\n  <p>Анна, frontend-разработчик</p>\n</BaseCard>\n~~~",
+    "level": "basic",
+    "tags": ["slots", "components"],
+    "enabled": true
+  },
+  {
+    "id": "vue-reactivity-001",
+    "topicId": "vue",
+    "sectionId": "vue-reactivity",
+    "question": "Чем Options API отличается от Composition API?",
+    "answer": "В Options API код разделён по типам: data, methods, computed, watch. В Composition API код группируют по логике задачи внутри setup: состояние, вычисления и функции одной возможности находятся рядом. Оба подхода реактивны и поддерживаются Vue 3. Composition API удобнее для переиспользования логики и больших компонентов, но не делает Options API неправильным.\n\n**Простой пример:**\n~~~js\n<script setup>\nimport { ref, computed } from 'vue'\n\nconst count = ref(0)\nconst doubled = computed(() => count.value * 2)\nconst increment = () => count.value++\n</script>\n~~~",
+    "level": "basic",
+    "tags": ["options-api", "composition-api"],
+    "enabled": true
+  },
+  {
+    "id": "vue-reactivity-002",
+    "topicId": "vue",
+    "sectionId": "vue-reactivity",
+    "question": "В чём разница между computed и watch?",
+    "answer": "computed создаёт вычисляемое значение из других реактивных данных и кэширует результат, пока зависимости не изменились. watch выполняет побочный эффект в ответ на изменение: отправляет запрос, пишет в хранилище или запускает таймер. Если нужно получить новое значение для шаблона — обычно computed. Если нужно что-то сделать — watch.\n\n**Простой пример:**\n~~~js\nconst firstName = ref('Анна')\nconst lastName = ref('Иванова')\nconst fullName = computed(() => firstName.value + ' ' + lastName.value)\n\nwatch(firstName, newName => {\n  console.log('Имя изменилось:', newName)\n})\n~~~",
+    "level": "basic",
+    "tags": ["computed", "watch", "reactivity"],
+    "enabled": true
+  },
+  {
+    "id": "vue-reactivity-003",
+    "topicId": "vue",
+    "sectionId": "vue-reactivity",
+    "question": "Что делает deep watch и почему с ним нужно быть осторожным?",
+    "answer": "Обычный watch объекта реагирует на замену ссылки, но не всегда на изменение глубоко вложенного поля. Опция deep заставляет Vue обходить вложенную структуру и отслеживать изменения внутри неё. Для большого объекта такой обход может быть дорогим, а причина срабатывания — неочевидной. Часто лучше наблюдать конкретное поле.\n\n**Простой пример:**\n~~~js\nconst user = reactive({ address: { city: 'Москва' } })\n\nwatch(\n  () => user.address.city,\n  city => console.log('Новый город:', city),\n)\n~~~\nЗдесь deep не нужен, потому что зависимость указана точно.",
+    "level": "middle",
+    "tags": ["watch", "deep", "performance"],
+    "enabled": true
+  },
+  {
+    "id": "vue-reactivity-004",
+    "topicId": "vue",
+    "sectionId": "vue-reactivity",
+    "question": "Зачем нужен nextTick?",
+    "answer": "Vue группирует изменения состояния и обновляет DOM не мгновенно после каждой строки, а в ближайшем цикле обновления. nextTick позволяет дождаться, когда Vue применит изменения к DOM. Он нужен, если после смены состояния требуется измерить или сфокусировать уже обновлённый элемент.\n\n**Простой пример:**\n~~~js\nconst inputVisible = ref(false)\nconst input = ref(null)\n\nasync function showInput() {\n  inputVisible.value = true\n  await nextTick()\n  input.value.focus()\n}\n~~~\nБез ожидания поле может ещё не существовать в DOM.",
+    "level": "middle",
+    "tags": ["nextTick", "dom", "rendering"],
+    "enabled": true
+  },
+  {
+    "id": "vue-rendering-001",
+    "topicId": "vue",
+    "sectionId": "vue-rendering",
+    "question": "Чем v-if отличается от v-show?",
+    "answer": "v-if действительно создаёт или удаляет элемент и его дочерние компоненты. v-show оставляет элемент в DOM и только переключает CSS-свойство display. Для редко меняющегося тяжёлого блока подходит v-if. Для элемента, который часто показывают и скрывают, v-show может быть быстрее, потому что не пересоздаёт его каждый раз.\n\n**Простой пример:**\n~~~vue\n<AdminPanel v-if=\"user.isAdmin\" />\n<p v-show=\"menuOpen\">Меню открыто</p>\n~~~",
+    "level": "basic",
+    "tags": ["v-if", "v-show", "directives"],
+    "enabled": true
+  },
+  {
+    "id": "vue-rendering-002",
+    "topicId": "vue",
+    "sectionId": "vue-rendering",
+    "question": "Чем v-bind отличается от v-model?",
+    "answer": "v-bind передаёт JavaScript-значение в атрибут или prop только в одном направлении. v-model создаёт двустороннюю связь: передаёт текущее значение и слушает событие его изменения. На компоненте v-model по умолчанию соответствует prop modelValue и событию update:modelValue.\n\n**Простой пример:**\n~~~vue\n<img :src=\"avatarUrl\">\n<input v-model=\"name\">\n\n<!-- Примерная развёртка v-model -->\n<input :value=\"name\" @input=\"name = $event.target.value\">\n~~~",
+    "level": "basic",
+    "tags": ["v-bind", "v-model", "directives"],
+    "enabled": true
+  },
+  {
+    "id": "vue-rendering-003",
+    "topicId": "vue",
+    "sectionId": "vue-rendering",
+    "question": "Что дают модификаторы событий во Vue?",
+    "answer": "Модификаторы позволяют описать типичное поведение события прямо в шаблоне. Например, prevent вызывает preventDefault, stop останавливает всплытие, once запускает обработчик один раз, а enter фильтрует нажатие клавиши. Это делает обработчик короче и оставляет в нём только бизнес-логику.\n\n**Простой пример:**\n~~~vue\n<form @submit.prevent=\"save\">\n  <input @keyup.enter=\"save\">\n  <button>Сохранить</button>\n</form>\n~~~\nТеперь save не обязан самостоятельно отменять стандартную отправку формы.",
+    "level": "basic",
+    "tags": ["events", "modifiers"],
+    "enabled": true
+  },
+  {
+    "id": "vue-rendering-004",
+    "topicId": "vue",
+    "sectionId": "vue-rendering",
+    "question": "Как работают scoped-стили во Vue?",
+    "answer": "При scoped Vue добавляет уникальный служебный атрибут элементам компонента и дополняет им CSS-селекторы. Поэтому стиль обычно не затрагивает элементы соседних компонентов. Это не Shadow DOM и не абсолютная изоляция: глобальные стили, наследуемые свойства и специальные deep-селекторы всё ещё могут влиять на содержимое.\n\n**Простой пример:**\n~~~vue\n<style scoped>\n.title { color: purple; }\n</style>\n~~~\nЭтот селектор применится к title текущего компонента, но не ко всем title приложения.",
+    "level": "middle",
+    "tags": ["scoped", "css", "components"],
+    "enabled": true
+  },
+  {
+    "id": "vue-rendering-005",
+    "topicId": "vue",
+    "sectionId": "vue-rendering",
+    "question": "Для чего нужны Transition и KeepAlive?",
+    "answer": "Transition помогает добавлять CSS-анимации при появлении, исчезновении или смене элемента. KeepAlive кэширует динамический компонент после переключения, чтобы не уничтожать его состояние. Это разные задачи: Transition отвечает за внешний переход, KeepAlive — за сохранение экземпляра.\n\n**Простой пример:**\n~~~vue\n<Transition name=\"fade\">\n  <p v-if=\"visible\">Готово</p>\n</Transition>\n\n<KeepAlive>\n  <component :is=\"currentTab\" />\n</KeepAlive>\n~~~\nВо втором случае введённые данные вкладки не пропадут после временного переключения.",
+    "level": "middle",
+    "tags": ["transition", "keep-alive"],
+    "enabled": true
+  },
+  {
+    "id": "vue-ecosystem-001",
+    "topicId": "vue",
+    "sectionId": "vue-ecosystem",
+    "question": "Чем mutations отличаются от actions во Vuex?",
+    "answer": "В классическом Vuex mutation синхронно изменяет state, а action содержит логику, может быть асинхронным и вызывает mutation через commit. Такое разделение делает изменения состояния предсказуемыми. В современной Pinia отдельного понятия mutations нет: action может менять state напрямую.\n\n**Простой пример:**\n~~~js\nactions: {\n  async loadUser({ commit }) {\n    const user = await api.getUser()\n    commit('setUser', user)\n  }\n},\nmutations: {\n  setUser(state, user) {\n    state.user = user\n  }\n}\n~~~",
+    "level": "middle",
+    "tags": ["vuex", "actions", "mutations"],
+    "enabled": true
+  },
+  {
+    "id": "vue-ecosystem-002",
+    "topicId": "vue",
+    "sectionId": "vue-ecosystem",
+    "question": "Какие хуки навигации есть во Vue Router?",
+    "answer": "Глобальный beforeEach запускается перед каждым переходом и часто проверяет авторизацию. beforeResolve вызывается позже, когда проверки компонентов уже пройдены. afterEach работает после подтверждённого перехода и не может его отменить. Есть также хуки конкретного маршрута и компонента.\n\n**Простой пример:**\n~~~js\nrouter.beforeEach(to => {\n  if (to.meta.requiresAuth && !auth.isLoggedIn) {\n    return { name: 'login' }\n  }\n})\n~~~\nЕсли пользователь не вошёл, защищённый маршрут перенаправит его на вход.",
+    "level": "middle",
+    "tags": ["vue-router", "guards"],
+    "enabled": true
+  },
+  {
+    "id": "vue-ecosystem-003",
+    "topicId": "vue",
+    "sectionId": "vue-ecosystem",
+    "question": "Что такое Teleport во Vue 3?",
+    "answer": "Teleport позволяет описать часть шаблона внутри компонента, но отрисовать её в другом месте DOM. Это удобно для модальных окон, уведомлений и всплывающих меню, которым мешают overflow или z-index родителя. Логически содержимое остаётся частью исходного Vue-компонента и сохраняет доступ к его состоянию.\n\n**Простой пример:**\n~~~vue\n<Teleport to=\"body\">\n  <div v-if=\"open\" class=\"modal\">Подтвердить удаление?</div>\n</Teleport>\n~~~",
+    "level": "middle",
+    "tags": ["teleport", "vue3"],
+    "enabled": true
+  }
+]

@@ -2,10 +2,17 @@
 import { onMounted, ref } from 'vue'
 import { ArrowRight, BookOpen } from '@lucide/vue'
 import { StaticCardRepository } from './StaticCardRepository'
-import type { Topic } from './types'
+import type { Card, Topic } from './types'
 
 const topics = ref<Topic[]>([])
-onMounted(async () => { topics.value = await new StaticCardRepository().getTopics() })
+const cards = ref<Card[]>([])
+
+onMounted(async () => {
+  const repository = new StaticCardRepository()
+  ;[topics.value, cards.value] = await Promise.all([repository.getTopics(), repository.getCards()])
+})
+
+const cardCount = (topicId: string) => cards.value.filter((card) => card.topicId === topicId).length
 </script>
 
 <template>
@@ -13,13 +20,13 @@ onMounted(async () => { topics.value = await new StaticCardRepository().getTopic
     <header class="page-header">
       <span class="eyebrow">База знаний</span>
       <h1>Темы обучения</h1>
-      <p>Начинаем с JavaScript. После запуска основного цикла добавим Vue, SQL и PHP.</p>
+      <p>Выберите направление и проходите карточки в удобном темпе.</p>
     </header>
     <div class="topic-list">
       <RouterLink v-for="topic in topics" :key="topic.id" class="topic-card" :to="`/topics/${topic.id}`">
-        <div class="topic-card__icon"><BookOpen :size="24" /></div>
+        <div class="topic-card__icon" :style="{ background: topic.accent + '22', color: topic.accent }"><BookOpen :size="24" /></div>
         <div class="topic-card__content">
-          <span class="eyebrow">30 карточек</span>
+          <span class="eyebrow">{{ cardCount(topic.id) }} карточек</span>
           <h2>{{ topic.title }}</h2>
           <p>{{ topic.description }}</p>
           <div class="topic-card__sections">

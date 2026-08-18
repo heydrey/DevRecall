@@ -2,14 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { StaticCardRepository } from './StaticCardRepository'
 
 describe('StaticCardRepository', () => {
-  it('возвращает 30 включённых JavaScript-карточек со стабильными уникальными ID', async () => {
+  it('возвращает включённые карточки со стабильными уникальными ID', async () => {
     const repository = new StaticCardRepository()
 
-    const cards = await repository.getCardsByTopic('javascript')
+    const cards = await repository.getCards()
 
-    expect(cards).toHaveLength(30)
-    expect(new Set(cards.map((card) => card.id)).size).toBe(30)
-    expect(cards.every((card) => card.id.startsWith('js-'))).toBe(true)
+    expect(cards).toHaveLength(356)
+    expect(new Set(cards.map((card) => card.id)).size).toBe(356)
     expect(cards.every((card) => card.question.trim() && card.answer.trim())).toBe(true)
   })
 
@@ -23,13 +22,14 @@ describe('StaticCardRepository', () => {
     await expect(repository.getCardById('missing-card')).resolves.toBeNull()
   })
 
-  it('возвращает тему JavaScript с четырьмя разделами', async () => {
+  it('возвращает все темы и расширенную тему JavaScript', async () => {
     const repository = new StaticCardRepository()
 
     const topics = await repository.getTopics()
 
-    expect(topics).toHaveLength(1)
+    expect(topics).toHaveLength(21)
     expect(topics[0]).toMatchObject({ id: 'javascript', title: 'JavaScript' })
-    expect(topics[0]?.sections).toHaveLength(4)
+    expect(topics[0]?.sections).toHaveLength(6)
+    await expect(repository.getCardsByTopic('javascript')).resolves.toHaveLength(60)
   })
 })
