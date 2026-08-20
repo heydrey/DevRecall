@@ -48,6 +48,18 @@ const defaultSettings: UserSettings = {
   sessionMinutes: 10,
 }
 
+interface DatabaseErrorLike {
+  code?: string
+  message?: string
+}
+
+function databaseError(action: string, error: DatabaseErrorLike | null | undefined): ApiError {
+  const code = error?.code ? ` [${error.code}]` : ''
+  const detail = error?.message ? `: ${error.message}` : ''
+  console.error(`Supabase: ${action}${code}${detail}`)
+  return new ApiError(500, `${action}${code}${detail}`)
+}
+
 function validIso(value: unknown): value is string {
   return typeof value === 'string' && Number.isFinite(Date.parse(value))
 }
@@ -87,14 +99,14 @@ function parseBody(body: unknown): { deviceId: string; platform?: string; cursor
 
 async function addChange(client: SupabaseClient, userId: string, entityType: string, entityKey: string): Promise<void> {
   const { error } = await client.from('sync_changes').insert({ user_id: userId, entity_type: entityType, entity_key: entityKey })
-  if (error) throw new ApiError(500, 'Не удалось записать изменение синхронизации.')
+  if (error) throw databaseError('Не удалось записать изменение синхронизации', error)
 }
 
 async function applyReview(client: SupabaseClient, userId: string, deviceId: string, mutation: Extract<Mutation, { type: 'review.recorded' }>): Promise<boolean> {
   const row = { id: mutation.id, user_id: userId, device_id: deviceId, card_id: mutation.cardId, rating: mutation.rating, reviewed_at: mutation.reviewedAt, created_at: mutation.createdAt }
   const { error } = await client.from('review_events').insert(row)
   if (!error) return true
-  if (error.code !== '23505') throw new ApiError(500, 'Не удалось сохранить ответ на карточку.')
+  if (error.code !== '23505') throw databaseError('Не удалось сохранить ответ на карточку', error)
 
   const { data: existing } = await client.from('review_events').select('card_id, rating, reviewed_at').eq('id', mutation.id).single()
   if (!existing || existing.card_id !== mutation.cardId || existing.rating !== mutation.rating || existing.reviewed_at !== mutation.reviewedAt) {
@@ -108,7 +120,7 @@ async function recalculateCard(client: SupabaseClient, userId: string, cardId: s
     client.from('review_events').select('id, card_id, rating, reviewed_at').eq('user_id', userId).eq('card_id', cardId).order('reviewed_at').order('id'),
     client.from('card_progress').select('favorite, favorite_updated_at').eq('user_id', userId).eq('card_id', cardId).maybeSingle(),
   ])
-  if (error) throw new ApiError(500, 'Не удалось пересчитать карточку.')
+  if (error) throw databaseError('Не удалось пересчитать карточку', error)
 
   let fsrs: FsrsCardData | undefined
   let correctCount = 0
@@ -154,7 +166,7 @@ async function recalculateCard(client: SupabaseClient, userId: string, cardId: s
     favorite_updated_at: existing?.favorite_updated_at ?? null,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id,card_id' })
-  if (upsertError) throw new ApiError(500, 'Не удалось обновить прогресс карточки.')
+  if (upsertError) throw databaseError('Не удалось обновить прогресс карточки', upsertError)
   return { progress, events }
 }
 
@@ -173,12 +185,13 @@ async function applyFavorite(client: SupabaseClient, userId: string, mutation: E
     favorite_updated_at: mutation.createdAt,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id,card_id' })
-  if (error) throw new ApiError(500, 'Не удалось сохранить избранное.')
+  if (error) throw databaseError('Не удалось сохранить избранное', error)
   return true
 }
 
 async function applySettings(client: SupabaseClient, userId: string, mutation: Extract<Mutation, { type: 'settings.updated' }>): Promise<boolean> {
-  const { data: current } = await client.from('user_settings').select('settings, field_updated_at').eq('user_id', userId).maybeSingle()
+  const { data: current, error: readError } = await client.from('user_settings').select('settings, field_updated_at').eq('user_id', userId).maybeSingle()
+  if (readError) throw databaseError('Не удалось прочитать настройки', readError)
   const settings = { ...defaultSettings, ...(current?.settings ?? {}) }
   const fieldTimes = { ...(current?.field_updated_at ?? {}) } as Record<string, string>
   let changed = false
@@ -191,7 +204,7 @@ async function applySettings(client: SupabaseClient, userId: string, mutation: E
   }
   if (!changed) return false
   const { error } = await client.from('user_settings').upsert({ user_id: userId, settings, field_updated_at: fieldTimes, updated_at: new Date().toISOString() })
-  if (error) throw new ApiError(500, 'Не удалось сохранить настройки.')
+  if (error) throw databaseError('Не удалось сохранить настройки', error)
   return true
 }
 
@@ -224,7 +237,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       platform: body.platform ?? 'telegram',
       last_seen_at: new Date().toISOString(),
     }, { onConflict: 'user_id,client_device_id' }).select('id').single()
-    if (deviceError || !device) throw new ApiError(500, 'Не удалось зарегистрировать устройство.')
+    if (deviceError || !device) throw databaseError('Не удалось зарегистрировать устройство', deviceError)
 
     const acknowledgedMutationIds: string[] = []
     const affectedCards = new Set<string>()
@@ -258,7 +271,8 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       client.from('review_events').select('id, card_id, rating, reviewed_at').eq('user_id', user.id).order('reviewed_at').order('id'),
       client.from('sync_changes').select('sequence').eq('user_id', user.id).order('sequence', { ascending: false }).limit(1).maybeSingle(),
     ])
-    if (progressError || reviewError) throw new ApiError(500, 'Не удалось получить общий прогресс.')
+    if (progressError) throw databaseError('Не удалось получить прогресс карточек', progressError)
+    if (reviewError) throw databaseError('Не удалось получить историю ответов', reviewError)
 
     const changedProgress: Record<string, CardProgress> = {}
     for (const row of progressRows ?? []) changedProgress[row.card_id] = mapProgress(row)

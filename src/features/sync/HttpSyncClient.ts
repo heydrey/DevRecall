@@ -27,7 +27,16 @@ export class HttpSyncClient implements SyncClient {
         body: JSON.stringify(request),
         signal: controller.signal,
       })
-      if (!response.ok) throw new Error(`Ошибка синхронизации: HTTP ${response.status}`)
+      if (!response.ok) {
+        let message = `Ошибка синхронизации: HTTP ${response.status}`
+        try {
+          const body = await response.json() as { error?: string }
+          if (body.error) message = body.error
+        } catch {
+          // Если сервер вернул не JSON, показываем HTTP-статус.
+        }
+        throw new Error(message)
+      }
       const value = await response.json() as unknown
       if (!isSyncResponse(value)) throw new Error('Сервер вернул некорректный ответ синхронизации.')
       return value
