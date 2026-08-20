@@ -124,7 +124,7 @@ async function recalculateCard(client: SupabaseClient, userId: string, cardId: s
     events.push({ id: row.id, cardId, rating, reviewedAt: row.reviewed_at, previousIntervalDays: result.previousScheduledDays, nextIntervalDays: result.nextScheduledDays })
   }
 
-  const last = events.at(-1)
+  const last = events[events.length - 1]
   const isCorrect = last?.rating === 'good' || last?.rating === 'easy'
   const repetitions = events.length
   const status = fsrs && fsrs.scheduledDays >= 21 && isCorrect ? 'mastered' : repetitions === 0 ? 'new' : repetitions === 1 ? 'learning' : 'review'
