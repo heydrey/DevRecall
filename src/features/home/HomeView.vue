@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ArrowRight, Flame, Settings, Sparkles } from '@lucide/vue'
+import { ArrowRight, Flame, Shuffle, Sparkles, UserRound } from '@lucide/vue'
 import { RouterLink } from 'vue-router'
 import { StaticCardRepository } from '../content/StaticCardRepository'
 import type { Card, Topic } from '../content/types'
@@ -16,7 +16,8 @@ onMounted(async () => {
 })
 
 const dueCount = computed(() => cards.value.filter((card) => progressStore.isDue(card.id)).length)
-const newCount = computed(() => cards.value.filter((card) => !progressStore.progress[card.id]).length)
+const newCount = computed(() => cards.value.filter((card) => !(progressStore.progress[card.id]?.repetitions ?? 0)).length)
+const plannedCount = computed(() => Math.min(dueCount.value, progressStore.settings.dailyReviewLimit) + Math.min(newCount.value, progressStore.settings.dailyNewCards))
 const learnedCount = computed(() => Object.values(progressStore.progress).filter((item) => item.repetitions > 0).length)
 const todayCount = computed(() => {
   const today = new Date().toLocaleDateString('sv-SE')
@@ -58,6 +59,14 @@ const greeting = computed(() => {
   if (hour < 18) return 'Добрый день'
   return 'Добрый вечер'
 })
+const cardWord = (count: number) => {
+  const mod100 = count % 100
+  const mod10 = count % 10
+  if (mod100 >= 11 && mod100 <= 14) return 'карточек'
+  if (mod10 === 1) return 'карточка'
+  if (mod10 >= 2 && mod10 <= 4) return 'карточки'
+  return 'карточек'
+}
 </script>
 
 <template>
@@ -67,8 +76,8 @@ const greeting = computed(() => {
         <span class="eyebrow">DevRecall</span>
         <h1>{{ greeting }} 👋</h1>
       </div>
-      <RouterLink class="icon-button" to="/settings" aria-label="Настройки">
-        <Settings :size="21" />
+      <RouterLink class="icon-button" to="/profile" aria-label="Личный кабинет">
+        <UserRound :size="21" />
       </RouterLink>
     </header>
 
@@ -76,12 +85,16 @@ const greeting = computed(() => {
       <div class="study-hero__glow" />
       <div class="study-hero__icon"><Sparkles :size="22" /></div>
       <span class="study-hero__label">План на сегодня</span>
-      <h2>{{ dueCount ? `${dueCount} карточек к повторению` : 'Можно изучить новые карточки' }}</h2>
-      <p>Новых доступно: {{ newCount }}. Начните короткую сессию и сохраните темп.</p>
-      <RouterLink class="primary-button primary-button--light" to="/study?mode=today">
-        {{ todayCount ? 'Продолжить обучение' : 'Начать обучение' }}
-        <ArrowRight :size="19" />
-      </RouterLink>
+      <h2>{{ plannedCount ? (dueCount ? `${dueCount} ${cardWord(dueCount)} к повторению` : 'Можно изучить новые карточки') : 'На сегодня всё готово' }}</h2>
+      <p>{{ plannedCount ? `В плане ${plannedCount} ${cardWord(plannedCount)}. Выберите удобный режим и сохраните темп.` : 'Можно закрепить знания в свободной случайной тренировке.' }}</p>
+      <div class="study-hero__actions">
+        <RouterLink class="primary-button primary-button--light" to="/study?mode=today">
+          Повторить по плану <ArrowRight :size="19" />
+        </RouterLink>
+        <RouterLink class="primary-button hero-random-button" to="/study/random">
+          <Shuffle :size="18" />Случайная тренировка
+        </RouterLink>
+      </div>
     </section>
 
     <section>
@@ -153,6 +166,8 @@ const greeting = computed(() => {
 .study-hero__label { font-size:.78rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; opacity:.75; }
 .study-hero h2 { max-width:460px; margin:8px 0; font-size:clamp(1.65rem,6vw,2.4rem); letter-spacing:-.035em; }
 .study-hero p { max-width:500px; margin:0 0 22px; line-height:1.55; opacity:.78; }
+.study-hero__actions { display:flex; flex-wrap:wrap; gap:10px; }
+.hero-random-button { border:1px solid rgb(255 255 255 / 24%); background:rgb(255 255 255 / 12%); box-shadow:none; color:white; }
 .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
 .stat-tile { display:flex; min-height:120px; flex-direction:column; justify-content:flex-end; gap:3px; padding:16px; border:1px solid var(--border-subtle); border-radius:22px; background:var(--surface); box-shadow:var(--shadow-sm); }
 .stat-tile strong { font-size:1.65rem; letter-spacing:-.04em; }
@@ -171,5 +186,5 @@ const greeting = computed(() => {
 .topic-preview__body { display:flex; min-width:0; flex:1; flex-direction:column; gap:4px; }
 .topic-preview__body span { color:var(--text-muted); font-size:.82rem; }
 .topic-preview__percent { color:var(--primary); font-weight:800; }
-@media (max-width:440px) { .stats-grid { grid-template-columns:1fr 1fr; } .stat-tile:first-child { grid-column:span 2; min-height:92px; } }
+@media (max-width:440px) { .study-hero__actions { display:grid; }.stats-grid { grid-template-columns:1fr 1fr; } .stat-tile:first-child { grid-column:span 2; min-height:92px; } }
 </style>

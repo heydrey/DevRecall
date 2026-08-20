@@ -11,18 +11,20 @@
   },
   "dependencies": {
     "@lucide/vue": "latest",
+    "@supabase/supabase-js": "^2.112.3",
     "dompurify": "latest",
     "markdown-it": "latest",
     "pinia": "latest",
+    "ts-fsrs": "5.4.1",
     "vue": "latest",
     "vue-router": "latest",
     "zod": "latest"
   },
   "devDependencies": {
     "@pinia/testing": "latest",
+    "@tsconfig/node24": "latest",
     "@types/markdown-it": "latest",
     "@types/node": "latest",
-    "@tsconfig/node24": "latest",
     "@vitejs/plugin-vue": "latest",
     "@vue/test-utils": "latest",
     "@vue/tsconfig": "latest",

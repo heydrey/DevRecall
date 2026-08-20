@@ -1,0 +1,62 @@
+[
+  {
+    "id": "system-design-2026-001",
+    "topicId": "system-design",
+    "sectionId": "system-design-reliability",
+    "question": "Как спроектировать совместное редактирование документа в реальном времени?",
+    "answer": "Сначала уточняют число пользователей, допустимую задержку, offline-режим и требования к истории. WebSocket доставляет изменения, но главная задача — разрешение конкурентных edits через Operational Transformation или CRDT. Состояние периодически сохраняют, а операции имеют порядок и identity.\n\n**Простой пример:** два пользователя одновременно вставили символы в одну позицию; CRDT гарантирует одинаковый итоговый документ у обоих клиентов.\n\n**Что важно сказать на собеседовании:** начинаю с concurrency model, затем обсуждаю presence, reconnect, persistence, permissions и масштабирование rooms.",
+    "level": "advanced",
+    "tags": ["2026", "system-design", "crdt", "websocket"],
+    "enabled": true
+  },
+  {
+    "id": "system-design-2026-002",
+    "topicId": "system-design",
+    "sectionId": "system-design-basics",
+    "question": "Как спроектировать быструю платформу с изображениями и видео?",
+    "answer": "Оригиналы хранят в object storage, обработку выполняют асинхронные workers, а готовые варианты раздаёт CDN. Для изображений создают размеры и современные форматы, для видео — несколько bitrate. Метаданные и статусы обработки хранят отдельно.\n\n**Простой пример:** upload идёт напрямую в S3 по signed URL, message запускает transcoding, клиент получает статус и затем CDN URL.\n\n**Что важно сказать на собеседовании:** обсуждаю LCP, cache headers, invalidation, безопасность upload, retries, стоимость хранения и отказ обработки.",
+    "level": "advanced",
+    "tags": ["2026", "cdn", "object-storage", "media"],
+    "enabled": true
+  },
+  {
+    "id": "system-design-2026-003",
+    "topicId": "system-design",
+    "sectionId": "system-design-reliability",
+    "question": "Как спроектировать сервис уведомлений?",
+    "answer": "Приложения публикуют события, notification service применяет preferences и шаблоны, затем отправляет email, push или SMS через отдельные очереди. Нужны retries с backoff, DLQ, rate limits, idempotency и статус доставки.\n\n**Простой пример:** order.shipped создаёт одно событие, а сервис решает отправить push сразу и email через выбранный пользователем канал.\n\n**Что важно сказать на собеседовании:** отделяю бизнес-событие от канала, учитываю дубли, отказ provider, unsubscribe и observability.",
+    "level": "advanced",
+    "tags": ["2026", "notification-service", "queues"],
+    "enabled": true
+  },
+  {
+    "id": "system-design-2026-004",
+    "topicId": "system-design",
+    "sectionId": "system-design-basics",
+    "question": "Как выбрать способ изоляции tenants в SaaS?",
+    "answer": "Основные варианты: отдельная БД, отдельная schema или общие таблицы с tenant_id. Отдельная БД даёт сильную изоляцию, но сложнее эксплуатация; общая схема дешевле, но требует безошибочной авторизации и RLS. Возможен гибрид по размеру и чувствительности клиента.\n\n**Простой пример:** малые tenants живут в shared PostgreSQL с RLS, крупный регулируемый клиент получает отдельную базу.\n\n**Что важно сказать на собеседовании:** сравниваю безопасность, backup/restore одного tenant, миграции, стоимость, noisy neighbor и требования compliance.",
+    "level": "advanced",
+    "tags": ["2026", "multi-tenancy", "saas"],
+    "enabled": true
+  },
+  {
+    "id": "system-design-2026-005",
+    "topicId": "system-design",
+    "sectionId": "system-design-reliability",
+    "question": "Что такое cache stampede и как его предотвратить?",
+    "answer": "Когда популярный cache key истекает, множество запросов одновременно обращаются к медленному источнику и перегружают его. Используют single-flight lock, stale-while-revalidate, jitter для TTL и предварительное обновление горячих данных.\n\n**Простой пример:** только один worker пересчитывает каталог, остальные временно получают немного устаревшее значение.\n\n**Что важно сказать на собеседовании:** cache требует стратегии invalidation, защиты от stampede и поведения при недоступности Redis.",
+    "level": "advanced",
+    "tags": ["2026", "cache", "stampede"],
+    "enabled": true
+  },
+  {
+    "id": "system-design-2026-006",
+    "topicId": "system-design",
+    "sectionId": "system-design-reliability",
+    "question": "Latency production-endpoint выросла вдвое. Как расследовать проблему?",
+    "answer": "Сначала подтверждают метрику и определяют время, endpoints, регионы и percentiles. Затем проверяют последние deploys, traces по этапам, ошибки, saturation, slow queries и внешние зависимости. Изменяют одну подтверждённую причину и наблюдают результат.\n\n**Простой пример:** p95 вырос после release; traces показывают новый N+1 запрос, а не нехватку CPU. Release откатывают и исправляют загрузку связей.\n\n**Что важно сказать на собеседовании:** использую logs, metrics и traces вместе, отличаю correlation от причины и документирую предотвращение повторения.",
+    "level": "advanced",
+    "tags": ["2026", "observability", "latency", "incident"],
+    "enabled": true
+  }
+]

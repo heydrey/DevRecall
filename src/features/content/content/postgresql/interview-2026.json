@@ -1,0 +1,32 @@
+[
+  {
+    "id": "postgres-2026-001",
+    "topicId": "postgresql",
+    "sectionId": "postgres-indexes",
+    "question": "Таблица содержит 50 миллионов строк, запрос выполняется 8 секунд. С чего начать?",
+    "answer": "Начинают с EXPLAIN (ANALYZE, BUFFERS), а не с автоматического добавления индекса. Смотрят actual rows, типы scans, loops, сортировки, чтение диска, ожидание locks и расхождение оценок. Затем проверяют статистику, predicates и форму запроса.\n\n**Простой пример:** индекс существует, но функция над колонкой мешает его использовать; функциональный индекс или изменение условия решает проблему.\n\n**Что важно сказать на собеседовании:** сначала измеряю план, учитываю селективность и проверяю результат под реальной нагрузкой.",
+    "level": "advanced",
+    "tags": ["2026", "postgresql", "explain", "performance"],
+    "enabled": true
+  },
+  {
+    "id": "postgres-2026-002",
+    "topicId": "postgresql",
+    "sectionId": "postgres-transactions",
+    "question": "Зачем PostgreSQL connection pool и почему слишком много соединений вредно?",
+    "answer": "Каждое соединение PostgreSQL потребляет память и ресурсы, а большое их число увеличивает переключения и конкуренцию. Pool переиспользует ограниченный набор соединений и ставит лишние запросы в ожидание. Размер выбирают по БД и нагрузке, а не по числу web-клиентов.\n\n**Простой пример:** 100 instances по 50 соединений создадут 5000 подключений; PgBouncer ограничивает реальную нагрузку на PostgreSQL.\n\n**Что важно сказать на собеседовании:** контролирую pool на каждом instance, timeouts, длинные транзакции и режим pooling.",
+    "level": "advanced",
+    "tags": ["2026", "postgresql", "connection-pool", "pgbouncer"],
+    "enabled": true
+  },
+  {
+    "id": "postgres-2026-003",
+    "topicId": "postgresql",
+    "sectionId": "postgres-indexes",
+    "question": "Когда использовать partial или covering index?",
+    "answer": "Partial index хранит только строки, подходящие условию, и полезен для небольшого часто запрашиваемого подмножества. Covering index через INCLUDE содержит дополнительные колонки и иногда позволяет выполнить Index Only Scan без чтения таблицы.\n\n**Простой пример:** индекс только по заказам WHERE status='pending' остаётся маленьким; INCLUDE(total) позволяет вернуть сумму из индекса.\n\n**Что важно сказать на собеседовании:** index проектируется под реальный query pattern; учитываю write cost, размер и соответствие predicate.",
+    "level": "advanced",
+    "tags": ["2026", "partial-index", "covering-index"],
+    "enabled": true
+  }
+]

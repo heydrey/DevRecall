@@ -1,0 +1,52 @@
+[
+  {
+    "id": "testing-2026-001",
+    "topicId": "testing",
+    "sectionId": "testing-unit",
+    "question": "Когда писать unit, integration и end-to-end тест?",
+    "answer": "Unit проверяет изолированную логику быстро и точно. Integration проверяет реальное взаимодействие нескольких частей, например API и базы. E2E проходит ключевой пользовательский путь через весь стек. Выбор определяется риском, а не желанием получить максимальный процент coverage.\n\n**Простой пример:** расчёт скидки — unit; repository с PostgreSQL — integration; оформление заказа — E2E.\n\n**Что важно сказать на собеседовании:** предпочитаю много быстрых тестов и небольшое число критичных E2E, избегаю дублирования одной проверки на всех уровнях.",
+    "level": "middle",
+    "tags": ["2026", "unit", "integration", "e2e"],
+    "enabled": true
+  },
+  {
+    "id": "testing-2026-002",
+    "topicId": "testing",
+    "sectionId": "testing-unit",
+    "question": "Как тестировать checkout, который выполняет три API-вызова последовательно?",
+    "answer": "Нужно перечислить состояния и частичные отказы: первый вызов успешен, второй упал, третий не должен начаться; повтор пользователя не должен создать дубль. Помимо unit-тестов orchestration нужен integration-сценарий с реальными контрактами.\n\n**Простой пример:** reservation создан, payment упал — система отменяет reservation или ставит compensation job.\n\n**Что важно сказать на собеседовании:** проверяю промежуточное состояние, idempotency, compensation, retry и то, что пользователь получает понятный статус.",
+    "level": "advanced",
+    "tags": ["2026", "checkout", "partial-failure"],
+    "enabled": true
+  },
+  {
+    "id": "testing-2026-003",
+    "topicId": "testing",
+    "sectionId": "testing-mocks",
+    "question": "Что такое contract testing между frontend и backend?",
+    "answer": "Contract test проверяет, что provider и consumer одинаково понимают структуру запросов и ответов. Он обнаруживает несовместимое изменение раньше общего E2E. Контракт не заменяет проверку реального поведения backend.\n\n**Простой пример:** frontend ожидает поле user.name: string, а backend pipeline проверяет, что новый API всё ещё удовлетворяет этому контракту.\n\n**Что важно сказать на собеседовании:** versioning и backward compatibility важнее копирования TypeScript interface между двумя независимыми системами.",
+    "level": "advanced",
+    "tags": ["2026", "contract-testing", "api"],
+    "enabled": true
+  },
+  {
+    "id": "testing-2026-004",
+    "topicId": "testing",
+    "sectionId": "testing-mocks",
+    "question": "Почему repository полезно тестировать с настоящей базой, а не только моками?",
+    "answer": "Mock не воспроизводит SQL-синтаксис, constraints, transactions, типы и поведение конкретной БД. Временный PostgreSQL-контейнер даёт более честный integration test, оставаясь изолированным.\n\n**Простой пример:** мок разрешил duplicate email, но реальный unique constraint выбросил ошибку, которую код не обработал.\n\n**Что важно сказать на собеседовании:** mock применяю на границе дорогого внешнего сервиса, но собственный data access проверяю с реальной технологией.",
+    "level": "middle",
+    "tags": ["2026", "integration-test", "database"],
+    "enabled": true
+  },
+  {
+    "id": "testing-2026-005",
+    "topicId": "testing",
+    "sectionId": "testing-unit",
+    "question": "Как диагностировать flaky end-to-end тест?",
+    "answer": "Сначала собирают trace, screenshot, network и console logs именно неудачного запуска. Затем ищут гонку, общее состояние, зависимости от времени, случайный порядок и ожидание по таймеру. Исправляют условие готовности, а не увеличивают sleep.\n\n**Простой пример:** тест нажимал кнопку до завершения загрузки. Он должен ждать видимого enabled-состояния, а не фиксированные две секунды.\n\n**Что важно сказать на собеседовании:** flaky test — дефект; retry может собрать данные, но не считается исправлением.",
+    "level": "advanced",
+    "tags": ["2026", "flaky-tests", "e2e"],
+    "enabled": true
+  }
+]

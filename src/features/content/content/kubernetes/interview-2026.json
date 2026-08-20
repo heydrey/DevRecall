@@ -1,0 +1,22 @@
+[
+  {
+    "id": "k8s-2026-001",
+    "topicId": "kubernetes",
+    "sectionId": "k8s-operations",
+    "question": "Как resource requests влияют на autoscaling и стабильность Kubernetes?",
+    "answer": "Scheduler размещает Pod с учётом requests, а HPA часто сравнивает фактическое потребление с requested CPU. Слишком маленький request перегружает node и вызывает агрессивное масштабирование; слишком большой тратит capacity и мешает размещению.\n\n**Простой пример:** Pod использует 400m CPU при request 100m — HPA видит 400% utilization.\n\n**Что важно сказать на собеседовании:** requests выбираю по наблюдаемым percentiles, limits проверяю нагрузочными тестами и учитываю startup spikes.",
+    "level": "advanced",
+    "tags": ["2026", "kubernetes", "hpa", "resources"],
+    "enabled": true
+  },
+  {
+    "id": "k8s-2026-002",
+    "topicId": "kubernetes",
+    "sectionId": "k8s-operations",
+    "question": "Как приложение должно завершаться при Rolling Update Kubernetes?",
+    "answer": "После SIGTERM приложение перестаёт принимать новый трафик, завершает текущие запросы и фоновые операции, закрывает соединения и выходит до окончания terminationGracePeriod. Readiness должна стать false до фактической остановки.\n\n**Простой пример:** API получает SIGTERM, выключает keep-alive listener, ждёт активные requests до 20 секунд и затем закрывает pool БД.\n\n**Что важно сказать на собеседовании:** учитываю preStop, readiness propagation, graceful shutdown, идемпотентность workers и максимальную длительность операций.",
+    "level": "advanced",
+    "tags": ["2026", "kubernetes", "graceful-shutdown"],
+    "enabled": true
+  }
+]

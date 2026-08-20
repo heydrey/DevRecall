@@ -1,0 +1,12 @@
+[
+  {
+    "id": "laravel-2026-001",
+    "topicId": "laravel",
+    "sectionId": "laravel-core",
+    "question": "Что меняется при использовании Laravel Octane и долгоживущих workers?",
+    "answer": "Octane загружает приложение один раз и обслуживает много запросов одним worker, поэтому данные запроса нельзя оставлять в singleton, static fields или глобальном состоянии. Также нужно проверять библиотеки, которые предполагают новый процесс для каждого запроса.\n\n**Простой пример:** singleton CartService сохранил корзину первого пользователя и показал её второму. Состояние запроса нужно передавать явно или создавать scoped.\n\n**Что важно сказать на собеседовании:** понимаю разницу с PHP-FPM, слежу за state leakage, memory growth, worker recycling и graceful reload.",
+    "level": "advanced",
+    "tags": ["2026", "laravel", "octane", "workers"],
+    "enabled": true
+  }
+]

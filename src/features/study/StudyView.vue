@@ -3,19 +3,35 @@ import { computed, onMounted, ref } from 'vue'
 import { ArrowLeft, Check, RotateCcw, Star, X } from '@lucide/vue'
 import { useRoute, useRouter } from 'vue-router'
 import MarkdownContent from '../../shared/markdown/MarkdownContent.vue'
+import { StaticCardRepository } from '../content/StaticCardRepository'
 import { useProgressStore } from '../progress/progressStore'
 import type { ReviewRating } from '../progress/types'
 import { useStudyStore, type StudyMode } from './studyStore'
+import type { RandomPool, SessionMinutes } from './sessionBuilder'
 
 const route = useRoute()
 const router = useRouter()
 const studyStore = useStudyStore()
 const progressStore = useProgressStore()
+const repository = new StaticCardRepository()
 const loading = ref(true)
 
 onMounted(async () => {
   const mode = (route.query.mode as StudyMode | undefined) ?? 'today'
-  await studyStore.start(mode, String(route.query.topicId ?? 'javascript'))
+  if (mode === 'random') {
+    const topics = await repository.getTopics()
+    const requestedTopic = String(route.query.topicId ?? 'all')
+    const topicId = requestedTopic === 'all' || topics.some((topic) => topic.id === requestedTopic) ? requestedTopic : 'all'
+    const requestedPool = String(route.query.pool ?? 'all')
+    const pool: RandomPool = requestedPool === 'difficult' || requestedPool === 'favorites' || requestedPool === 'unseen' ? requestedPool : 'all'
+    const requestedMinutes = Number(route.query.minutes ?? progressStore.settings.sessionMinutes)
+    const minutes: SessionMinutes = requestedMinutes === 0 || requestedMinutes === 5 || requestedMinutes === 10 || requestedMinutes === 20
+      ? requestedMinutes
+      : progressStore.settings.sessionMinutes
+    await studyStore.startRandom({ topicId, pool, minutes })
+  } else {
+    await studyStore.start(mode, String(route.query.topicId ?? 'javascript'))
+  }
   loading.value = false
 })
 
@@ -27,10 +43,10 @@ const durationMinutes = computed(() => {
 })
 
 const ratingOptions: Array<{ value: ReviewRating; label: string; hint: string; className: string }> = [
-  { value: 'again', label: 'Не знаю', hint: 'повторить', className: 'rating--again' },
-  { value: 'hard', label: 'Сложно', hint: '1–3 дня', className: 'rating--hard' },
-  { value: 'good', label: 'Нормально', hint: '3–7 дней', className: 'rating--good' },
-  { value: 'easy', label: 'Легко', hint: '7+ дней', className: 'rating--easy' },
+  { value: 'again', label: 'Не знаю', hint: 'показать раньше', className: 'rating--again' },
+  { value: 'hard', label: 'Сложно', hint: 'короткий интервал', className: 'rating--hard' },
+  { value: 'good', label: 'Нормально', hint: 'обычный интервал', className: 'rating--good' },
+  { value: 'easy', label: 'Легко', hint: 'длинный интервал', className: 'rating--easy' },
 ]
 
 function rate(value: ReviewRating): void { studyStore.rate(value) }
@@ -61,19 +77,21 @@ function rate(value: ReviewRating): void { studyStore.rate(value) }
           <div><strong>{{ studyStore.ratings.good }}</strong><span>Нормально</span></div>
           <div><strong>{{ studyStore.ratings.easy }}</strong><span>Легко</span></div>
         </div>
-        <RouterLink class="primary-button" to="/">На главную</RouterLink>
-        <button class="secondary-button" @click="studyStore.start(studyStore.mode)"><RotateCcw :size="18" />Пройти ещё раз</button>
+        <button v-if="studyStore.mistakeCardIds.length" class="primary-button" @click="studyStore.repeatMistakes"><RotateCcw :size="18" />Повторить ошибки</button>
+        <button class="secondary-button" @click="studyStore.restartSession"><RotateCcw :size="18" />{{ studyStore.mode === 'random' ? 'Ещё одна случайная тренировка' : 'Пройти ещё раз' }}</button>
+        <RouterLink class="back-link back-link--center" to="/">На главную</RouterLink>
       </section>
       <section v-else class="result-card">
         <div class="result-card__icon"><Star :size="28" /></div>
         <h1>Здесь пока нет карточек</h1>
-        <p>Добавьте вопросы в избранное или начните обычное обучение.</p>
-        <RouterLink class="primary-button" to="/study?mode=today">Учиться сегодня</RouterLink>
+        <p>{{ studyStore.mode === 'random' ? 'По выбранным условиям ничего не найдено. Измените тему или набор.' : 'Добавьте вопросы в избранное или выберите другой режим.' }}</p>
+        <RouterLink class="primary-button" :to="studyStore.mode === 'random' ? '/study/random' : '/study?mode=today'">{{ studyStore.mode === 'random' ? 'Изменить условия' : 'Учиться сегодня' }}</RouterLink>
         <RouterLink class="back-link back-link--center" to="/"><ArrowLeft :size="18" />На главную</RouterLink>
       </section>
     </main>
 
     <main v-else-if="studyStore.currentCard" class="study-content">
+      <div v-if="progressStore.persistenceWarning" class="persistence-warning">{{ progressStore.persistenceWarning }}<button @click="progressStore.clearPersistenceWarning">×</button></div>
       <section class="question-card">
         <div class="question-card__meta">
           <span>{{ studyStore.currentCard.sectionId.replace('-', ' ') }}</span>
@@ -111,6 +129,8 @@ function rate(value: ReviewRating): void { studyStore.rate(value) }
 .study-header__progress i { display:block; height:100%; border-radius:inherit; background:var(--primary); transition:width 220ms ease; }
 .icon-button--favorite { color:#e3a52a; }
 .study-content { display:flex; width:min(100%,720px); min-height:calc(100dvh - 80px); margin:0 auto; padding:16px 16px 28px; flex-direction:column; }
+.persistence-warning { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; padding:11px 14px; border:1px solid #e9c475; border-radius:14px; background:#fff8e7; color:#77510d; font-size:.78rem; }
+.persistence-warning button { border:0; background:transparent; color:inherit; font-size:1.2rem; cursor:pointer; }
 .question-card { flex:1; padding:24px; border:1px solid var(--border-subtle); border-radius:30px; background:var(--surface); box-shadow:var(--shadow-md); }
 .question-card__meta { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .question-card__meta span,.question-card__meta b { padding:7px 10px; border-radius:999px; background:var(--surface-muted); color:var(--text-muted); font-size:.68rem; font-weight:800; text-transform:uppercase; }

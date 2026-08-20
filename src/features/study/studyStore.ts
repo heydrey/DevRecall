@@ -4,8 +4,13 @@ import { StaticCardRepository } from '../content/StaticCardRepository'
 import type { Card } from '../content/types'
 import { useProgressStore } from '../progress/progressStore'
 import type { ReviewRating } from '../progress/types'
+import {
+  buildPlannedSession,
+  buildRandomSession,
+  type RandomSessionOptions,
+} from './sessionBuilder'
 
-export type StudyMode = 'today' | 'topic' | 'favorites' | 'difficult'
+export type StudyMode = 'today' | 'topic' | 'favorites' | 'difficult' | 'random' | 'mistakes'
 
 const repository = new StaticCardRepository()
 
@@ -17,6 +22,10 @@ export const useStudyStore = defineStore('study', () => {
   const finished = ref(false)
   const ratings = ref<Record<ReviewRating, number>>({ again: 0, hard: 0, good: 0, easy: 0 })
   const mode = ref<StudyMode>('today')
+  const randomOptions = ref<RandomSessionOptions | null>(null)
+  const sessionCardIds = ref<string[]>([])
+  const mistakeCardIds = ref<string[]>([])
+  const lastTopicId = ref('javascript')
 
   const currentCard = computed(() => cards.value[currentIndex.value] ?? null)
   const completedCount = computed(() => Math.min(currentIndex.value, cards.value.length))
@@ -25,33 +34,76 @@ export const useStudyStore = defineStore('study', () => {
     return Math.round((completedCount.value / cards.value.length) * 100)
   })
 
-  async function start(nextMode: StudyMode, topicId = 'javascript'): Promise<void> {
-    const progressStore = useProgressStore()
-    const allCards = await repository.getCardsByTopic(topicId)
-    const due = allCards.filter((card) => progressStore.isDue(card.id))
-    const fresh = allCards.filter((card) => !progressStore.progress[card.id])
-    const studied = allCards.filter((card) => progressStore.progress[card.id] && !progressStore.isDue(card.id))
-
+  function resetSession(nextMode: StudyMode, nextCards: Card[]): void {
     mode.value = nextMode
-    if (nextMode === 'favorites') {
-      cards.value = allCards.filter((card) => progressStore.isFavorite(card.id))
-    } else if (nextMode === 'difficult') {
-      cards.value = progressStore.difficultCards(allCards)
-    } else if (nextMode === 'topic') {
-      cards.value = [...due, ...fresh, ...studied]
-    } else {
-      cards.value = [
-        ...due.slice(0, progressStore.settings.dailyReviewLimit),
-        ...fresh.slice(0, progressStore.settings.dailyNewCards),
-      ]
-      if (!cards.value.length) cards.value = studied.slice(0, 10)
-    }
-
+    cards.value = nextCards
+    sessionCardIds.value = nextCards.map((card) => card.id)
+    mistakeCardIds.value = []
     currentIndex.value = 0
     answerVisible.value = false
-    finished.value = cards.value.length === 0
+    finished.value = nextCards.length === 0
     startedAt.value = new Date().toISOString()
     ratings.value = { again: 0, hard: 0, good: 0, easy: 0 }
+  }
+
+  async function start(nextMode: StudyMode, topicId = 'javascript'): Promise<void> {
+    const progressStore = useProgressStore()
+    lastTopicId.value = topicId
+    randomOptions.value = null
+
+    if (nextMode === 'today') {
+      const allCards = await repository.getCards()
+      resetSession('today', buildPlannedSession(allCards, {
+        progress: progressStore.progress,
+        dailyReviewLimit: progressStore.settings.dailyReviewLimit,
+        dailyNewCards: progressStore.settings.dailyNewCards,
+      }))
+      return
+    }
+
+    const source = nextMode === 'topic'
+      ? await repository.getCardsByTopic(topicId)
+      : await repository.getCards()
+    const due = source.filter((card) => progressStore.isDue(card.id))
+    const fresh = source.filter((card) => !progressStore.progress[card.id])
+    const studied = source.filter((card) => progressStore.progress[card.id] && !progressStore.isDue(card.id))
+
+    if (nextMode === 'favorites') {
+      resetSession('favorites', source.filter((card) => progressStore.isFavorite(card.id)))
+    } else if (nextMode === 'difficult') {
+      resetSession('difficult', progressStore.difficultCards(source))
+    } else {
+      resetSession('topic', [...due, ...fresh, ...studied])
+    }
+  }
+
+  async function startRandom(options: RandomSessionOptions): Promise<void> {
+    const progressStore = useProgressStore()
+    const allCards = await repository.getCards()
+    const difficultCardIds = new Set(progressStore.difficultCards(allCards).map((card) => card.id))
+    randomOptions.value = { ...options }
+    resetSession('random', buildRandomSession(allCards, options, {
+      progress: progressStore.progress,
+      difficultCardIds,
+    }))
+  }
+
+  async function repeatMistakes(): Promise<void> {
+    const allCards = await repository.getCards()
+    const ids = new Set(mistakeCardIds.value)
+    resetSession('mistakes', allCards.filter((card) => ids.has(card.id)))
+  }
+
+  async function restartSession(): Promise<void> {
+    if (mode.value === 'random' && randomOptions.value) {
+      await startRandom(randomOptions.value)
+      return
+    }
+    if (mode.value === 'mistakes') {
+      await repeatMistakes()
+      return
+    }
+    await start(mode.value, lastTopicId.value)
   }
 
   function revealAnswer(): void {
@@ -66,6 +118,9 @@ export const useStudyStore = defineStore('study', () => {
     progressStore.recordReview(card.id, rating)
     ratings.value = { ...ratings.value, [rating]: ratings.value[rating] + 1 }
 
+    if ((rating === 'again' || rating === 'hard') && !mistakeCardIds.value.includes(card.id)) {
+      mistakeCardIds.value = [...mistakeCardIds.value, card.id]
+    }
     if (rating === 'again' && cards.value.length > 1) {
       const insertAt = Math.min(currentIndex.value + 5, cards.value.length)
       cards.value.splice(insertAt, 0, card)
@@ -90,9 +145,15 @@ export const useStudyStore = defineStore('study', () => {
     finished,
     ratings,
     mode,
+    randomOptions,
+    sessionCardIds,
+    mistakeCardIds,
     completedCount,
     progressPercent,
     start,
+    startRandom,
+    repeatMistakes,
+    restartSession,
     revealAnswer,
     rate,
     toggleFavorite,

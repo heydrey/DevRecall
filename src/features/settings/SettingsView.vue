@@ -1,14 +1,20 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { ArrowLeft, RotateCcw } from '@lucide/vue'
 import { useProgressStore } from '../progress/progressStore'
 
 const store = useProgressStore()
+const resetConfirmation = ref(false)
 function applyTheme(theme = store.settings.theme): void {
   document.documentElement.dataset.theme = theme === 'system' ? '' : theme
 }
 function requestReset(): void {
-  if (window.confirm('Удалить весь локальный прогресс?')) store.resetProgress()
+  if (!resetConfirmation.value) {
+    resetConfirmation.value = true
+    return
+  }
+  store.resetProgress()
+  resetConfirmation.value = false
 }
 onMounted(() => applyTheme())
 watch(() => store.settings.theme, (theme) => applyTheme(theme))
@@ -25,11 +31,14 @@ watch(() => store.settings.theme, (theme) => applyTheme(theme))
       <label><span><strong>Максимум повторений</strong><small>Ограничение одной сессии</small></span>
         <select :value="store.settings.dailyReviewLimit" @change="store.updateSettings({ dailyReviewLimit: Number(($event.target as HTMLSelectElement).value) })"><option :value="50">50</option><option :value="100">100</option><option :value="500">Без ограничения</option></select>
       </label>
+      <label><span><strong>Обычная длительность</strong><small>Для случайной тренировки</small></span>
+        <select :value="store.settings.sessionMinutes" @change="store.updateSettings({ sessionMinutes: Number(($event.target as HTMLSelectElement).value) as 5|10|20|0 })"><option :value="5">5 минут</option><option :value="10">10 минут</option><option :value="20">20 минут</option><option :value="0">Без ограничения</option></select>
+      </label>
       <label><span><strong>Цветовая тема</strong><small>Внешний вид приложения</small></span>
         <select :value="store.settings.theme" @change="store.updateSettings({ theme: ($event.target as HTMLSelectElement).value as 'system'|'light'|'dark' })"><option value="system">Системная</option><option value="light">Светлая</option><option value="dark">Тёмная</option></select>
       </label>
     </section>
-    <button class="danger-button" @click="requestReset"><RotateCcw :size="18" />Сбросить прогресс</button>
+    <button class="danger-button" @click="requestReset"><RotateCcw :size="18" />{{ resetConfirmation ? 'Нажмите ещё раз для удаления' : 'Сбросить прогресс' }}</button>
   </div>
 </template>
 

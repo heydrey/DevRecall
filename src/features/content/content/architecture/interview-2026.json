@@ -1,0 +1,22 @@
+[
+  {
+    "id": "architecture-2026-001",
+    "topicId": "architecture",
+    "sectionId": "architecture-web",
+    "question": "Как transactional outbox предотвращает потерю события?",
+    "answer": "Изменение бизнес-данных и запись будущего события сохраняются в одной транзакции БД. Отдельный publisher читает outbox и отправляет сообщения с повторными попытками. Так нет промежутка, где заказ сохранён, а event потерян из-за сбоя.\n\n**Простой пример:** INSERT order и INSERT outbox(order.created) фиксируются вместе; worker позднее публикует событие в RabbitMQ.\n\n**Что важно сказать на собеседовании:** доставка обычно at-least-once, поэтому consumer идемпотентен; outbox очищается и наблюдается.",
+    "level": "advanced",
+    "tags": ["2026", "outbox", "events"],
+    "enabled": true
+  },
+  {
+    "id": "architecture-2026-002",
+    "topicId": "architecture",
+    "sectionId": "architecture-web",
+    "question": "Чем Saga отличается от распределённой транзакции?",
+    "answer": "Saga разбивает процесс на локальные транзакции и compensating actions при ошибке. Она лучше масштабируется между независимыми сервисами, но некоторое время допускает промежуточное состояние. Распределённая транзакция пытается зафиксировать всё атомарно и сильнее связывает участников.\n\n**Простой пример:** заказ резервирует товар, затем платёж; при ошибке оплаты compensation снимает резерв.\n\n**Что важно сказать на собеседовании:** compensation не всегда является простым undo; нужны idempotency, retries, state machine и видимый статус процесса.",
+    "level": "advanced",
+    "tags": ["2026", "saga", "distributed-transaction"],
+    "enabled": true
+  }
+]

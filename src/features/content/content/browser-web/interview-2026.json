@@ -1,0 +1,42 @@
+[
+  {
+    "id": "browser-2026-001",
+    "topicId": "browser-web",
+    "sectionId": "browser-runtime",
+    "question": "Страница стала медленной. Как правильно начать диагностику?",
+    "answer": "Нужно сначала определить класс проблемы: сеть, выполнение JavaScript, layout/paint, память или сервер. Используют Network и Performance panels, Lighthouse, CPU/Network throttling и реальные метрики пользователей. После изменения повторяют тот же замер.\n\n**Простой пример:** Lighthouse показывает плохой LCP, а Network — изображение 6 МБ. Сначала оптимизируют изображение, а не переписывают JavaScript.\n\n**Что важно сказать на собеседовании:** measure → identify bottleneck → change one thing → re-measure.",
+    "level": "middle",
+    "tags": ["2026", "performance", "devtools"],
+    "enabled": true
+  },
+  {
+    "id": "browser-2026-002",
+    "topicId": "browser-web",
+    "sectionId": "browser-runtime",
+    "question": "Что измеряют LCP, INP и CLS?",
+    "answer": "LCP оценивает скорость появления крупнейшего важного элемента. INP измеряет задержку реакции интерфейса на действия пользователя. CLS показывает неожиданные сдвиги макета. Вместе они описывают загрузку, отзывчивость и визуальную стабильность.\n\n**Простой пример:** поздно загрузившийся баннер сдвинул текст — ухудшился CLS; тяжёлый обработчик клика — INP.\n\n**Что важно сказать на собеседовании:** смотрю не только лабораторный Lighthouse, но и field data реальных пользователей.",
+    "level": "middle",
+    "tags": ["2026", "core-web-vitals", "lcp", "inp", "cls"],
+    "enabled": true
+  },
+  {
+    "id": "browser-2026-003",
+    "topicId": "browser-web",
+    "sectionId": "browser-dom",
+    "question": "Что такое layout thrashing и как его избежать?",
+    "answer": "Layout thrashing возникает, когда код многократно чередует изменение DOM и чтение геометрии. Браузер вынужден синхронно пересчитывать layout много раз. Чтения группируют вместе, затем выполняют записи, а анимации планируют через requestAnimationFrame.\n\n**Простой пример:** в цикле изменить width и сразу читать offsetHeight для каждого элемента хуже, чем сначала прочитать все размеры, затем изменить все элементы.\n\n**Что важно сказать на собеседовании:** понимаю forced synchronous layout и подтверждаю его через Performance panel.",
+    "level": "advanced",
+    "tags": ["2026", "layout", "performance"],
+    "enabled": true
+  },
+  {
+    "id": "browser-2026-004",
+    "topicId": "browser-web",
+    "sectionId": "browser-runtime",
+    "question": "Когда использовать AbortController в браузерном приложении?",
+    "answer": "AbortController отменяет fetch и другие поддерживающие signal операции, когда результат больше не нужен. Это экономит ресурсы и предотвращает применение устаревшего ответа после смены страницы или фильтра.\n\n**Простой пример:** новый поисковый запрос отменяет предыдущий fetch, если пользователь продолжил ввод.\n\n**Что важно сказать на собеседовании:** отмена не заменяет обработку ошибок; AbortError отделяю от настоящей сетевой ошибки.",
+    "level": "middle",
+    "tags": ["2026", "abort-controller", "fetch"],
+    "enabled": true
+  }
+]

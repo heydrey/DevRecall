@@ -1,0 +1,52 @@
+[
+  {
+    "id": "security-2026-001",
+    "topicId": "security",
+    "sectionId": "security-access",
+    "question": "Где хранить access и refresh tokens в браузерном приложении?",
+    "answer": "Универсального ответа нет, но чувствительный refresh token обычно помещают в Secure HttpOnly SameSite cookie, недоступную JavaScript. Короткий access token можно хранить только в памяти. Cookie требует защиты от CSRF, а localStorage увеличивает ущерб при XSS.\n\n**Простой пример:** refresh cookie отправляется только на /auth/refresh, access token живёт 10 минут в памяти приложения.\n\n**Что важно сказать на собеседовании:** обсуждаю threat model, XSS, CSRF, rotation, reuse detection, logout и отзыв сессии.",
+    "level": "advanced",
+    "tags": ["2026", "tokens", "xss", "csrf"],
+    "enabled": true
+  },
+  {
+    "id": "security-2026-002",
+    "topicId": "security",
+    "sectionId": "security-web",
+    "question": "Как снизить риск атаки через dependency или supply chain?",
+    "answer": "Зависимости фиксируют lockfile, получают из доверенного registry, регулярно сканируют и обновляют небольшими проверяемыми изменениями. CI проверяет integrity, licenses и известные уязвимости, а production image содержит только необходимые packages.\n\n**Простой пример:** pull request с обновлением библиотеки запускает dependency scan и показывает изменение transitive dependencies.\n\n**Что важно сказать на собеседовании:** audit не гарантирует безопасность; нужны минимальные зависимости, review, SBOM, воспроизводимая сборка и ограниченные CI-токены.",
+    "level": "advanced",
+    "tags": ["2026", "supply-chain", "dependencies", "sbom"],
+    "enabled": true
+  },
+  {
+    "id": "security-2026-003",
+    "topicId": "security",
+    "sectionId": "security-web",
+    "question": "Как Content Security Policy уменьшает последствия XSS?",
+    "answer": "CSP ограничивает источники scripts, styles и других ресурсов. Строгая политика с nonce или hashes блокирует неизвестный inline-код, даже если злоумышленник сумел вставить HTML. CSP является дополнительным слоем, а не заменой безопасного вывода.\n\n**Простой пример:** сервер создаёт случайный nonce и разрешает выполнение только script с этим nonce. Вставленный злоумышленником script не выполнится.\n\n**Что важно сказать на собеседовании:** начинаю с report-only, анализирую нарушения, не разрешаю unsafe-inline без необходимости.",
+    "level": "advanced",
+    "tags": ["2026", "csp", "xss"],
+    "enabled": true
+  },
+  {
+    "id": "security-2026-004",
+    "topicId": "security",
+    "sectionId": "security-access",
+    "question": "Как безопасно ротировать секрет без остановки приложения?",
+    "answer": "На переходный период система принимает старый и новый секрет, но создаёт новые подписи или соединения уже с новым. После обновления всех consumers старый секрет отзывают. Секреты версионируют и доставляют через secret manager.\n\n**Простой пример:** API проверяет JWT двумя public keys, но подписывает новым private key; после истечения старых tokens прежний key удаляется.\n\n**Что важно сказать на собеседовании:** планирую overlap, rollback, аудит использования и не печатаю секрет в логах.",
+    "level": "advanced",
+    "tags": ["2026", "secret-rotation"],
+    "enabled": true
+  },
+  {
+    "id": "security-2026-005",
+    "topicId": "security",
+    "sectionId": "security-access",
+    "question": "Как не допустить утечку данных между tenants?",
+    "answer": "Tenant определяется из проверенной identity, а не из произвольного параметра клиента. Фильтр применяется централизованно в repository или RLS, permissions проверяются на каждом объекте, а тесты пытаются читать и изменять данные другого tenant.\n\n**Простой пример:** token tenant A не может получить document B даже при прямой подстановке его id в URL.\n\n**Что важно сказать на собеседовании:** defense in depth — backend authorization, tenant-aware queries, RLS, непривилегированная DB-role и негативные integration tests.",
+    "level": "advanced",
+    "tags": ["2026", "multi-tenancy", "authorization"],
+    "enabled": true
+  }
+]

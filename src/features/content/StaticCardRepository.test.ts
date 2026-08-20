@@ -7,8 +7,8 @@ describe('StaticCardRepository', () => {
 
     const cards = await repository.getCards()
 
-    expect(cards).toHaveLength(356)
-    expect(new Set(cards.map((card) => card.id)).size).toBe(356)
+    expect(cards).toHaveLength(498)
+    expect(new Set(cards.map((card) => card.id)).size).toBe(498)
     expect(cards.every((card) => card.question.trim() && card.answer.trim())).toBe(true)
   })
 
@@ -30,6 +30,9 @@ describe('StaticCardRepository', () => {
     expect(topics).toHaveLength(21)
     expect(topics[0]).toMatchObject({ id: 'javascript', title: 'JavaScript' })
     expect(topics[0]?.sections).toHaveLength(6)
-    await expect(repository.getCardsByTopic('javascript')).resolves.toHaveLength(60)
+    await expect(repository.getCardsByTopic('javascript')).resolves.toHaveLength(63)
+    await expect(repository.getCardsByTopic('vue')).resolves.toHaveLength(50)
+    await expect(repository.getCardsByTopic('php')).resolves.toHaveLength(50)
+    await expect(repository.getCardsByTopic('laravel')).resolves.toHaveLength(50)
   })
 })
