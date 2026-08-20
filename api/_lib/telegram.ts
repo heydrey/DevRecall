@@ -15,6 +15,21 @@ function requiredBotToken(): string {
   return token
 }
 
+function assertAllowedTelegramUser(userId: number): void {
+  const configuredIds = process.env.TELEGRAM_ALLOWED_USER_IDS?.trim()
+  if (!configuredIds) return
+
+  const allowedIds = new Set(
+    configuredIds
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean),
+  )
+  if (!allowedIds.has(String(userId))) {
+    throw new ApiError(403, 'Доступ к приложению закрыт.')
+  }
+}
+
 export function verifyTelegramInitData(rawInitData: string, now = Date.now()): VerifiedTelegramUser {
   if (!rawInitData || rawInitData.length > 16_384) throw new ApiError(401, 'Некорректные данные Telegram.')
 
@@ -45,9 +60,10 @@ export function verifyTelegramInitData(rawInitData: string, now = Date.now()): V
 
   try {
     const user = JSON.parse(params.get('user') ?? '') as Partial<VerifiedTelegramUser>
-    if (!Number.isSafeInteger(user.id) || typeof user.first_name !== 'string' || !user.first_name.trim()) {
+    if (typeof user.id !== 'number' || !Number.isSafeInteger(user.id) || typeof user.first_name !== 'string' || !user.first_name.trim()) {
       throw new Error('invalid user')
     }
+    assertAllowedTelegramUser(user.id)
     return user as VerifiedTelegramUser
   } catch {
     throw new ApiError(401, 'Telegram не передал пользователя.')

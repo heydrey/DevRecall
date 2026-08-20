@@ -21,6 +21,7 @@
 Создайте проект из этого репозитория и добавьте Environment Variables:
 
 - `TELEGRAM_BOT_TOKEN`;
+- `TELEGRAM_ALLOWED_USER_IDS` — Telegram ID владельцев через запятую;
 - `SUPABASE_URL`;
 - `SUPABASE_SERVICE_ROLE_KEY`;
 - `TELEGRAM_INIT_DATA_MAX_AGE_SECONDS=86400`.

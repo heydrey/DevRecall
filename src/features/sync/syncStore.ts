@@ -42,9 +42,8 @@ export const useSyncStore = defineStore('sync', () => {
   const pendingCount = computed(() => progressStore.pendingSyncCount)
 
   async function retry(): Promise<void> {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL?.trim()
     const initData = profileStore.getTelegramInitData()
-    if (!baseUrl || !initData) {
+    if (!initData) {
       status.value = 'local'
       lastError.value = null
       return

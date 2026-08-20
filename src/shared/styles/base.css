@@ -66,3 +66,16 @@ html[data-telegram='true'] body {
 .empty-state a { color: var(--primary); font-weight: 800; text-decoration: none; }
 .loader { width: 38px; height: 38px; border: 4px solid var(--primary-soft); border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.access-gate {
+  display: grid;
+  width: min(440px, calc(100% - 32px));
+  min-height: 100dvh;
+  margin: 0 auto;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+}
+.access-gate__badge { display: grid; width: 64px; height: 64px; place-items: center; border-radius: 22px; background: var(--primary-soft); font-size: 1.8rem; }
+.access-gate h1 { margin: 20px 0 8px; font-size: 2rem; letter-spacing: -.04em; }
+.access-gate p { margin: 0; color: var(--text-muted); line-height: 1.6; }

@@ -8,15 +8,24 @@ export class TelegramIdentityProvider implements UserIdentityProvider {
 
   async getUser(): Promise<AppUser> {
     const app = getTelegramWebApp()
-    const telegramUser = app?.initDataUnsafe.user
-    if (!app || !telegramUser) throw new Error('Telegram не передал данные пользователя.')
+    if (!app) throw new Error('Откройте приложение в Telegram.')
 
-    return {
-      id: `telegram:${telegramUser.id}`,
-      telegramId: String(telegramUser.id),
-      displayName: [telegramUser.first_name, telegramUser.last_name].filter(Boolean).join(' '),
-      photoUrl: telegramUser.photo_url,
-      mode: 'telegram',
+    const baseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') ?? ''
+    const controller = new AbortController()
+    const timeout = window.setTimeout(() => controller.abort(), 15_000)
+    try {
+      const response = await fetch(`${baseUrl}/api/auth/telegram`, {
+        method: 'POST',
+        headers: { Authorization: `tma ${app.initData}` },
+        signal: controller.signal,
+      })
+      const body = await response.json() as { user?: AppUser; error?: string }
+      if (!response.ok || !body.user) {
+        throw new Error(body.error ?? 'Не удалось подтвердить вход через Telegram.')
+      }
+      return body.user
+    } finally {
+      window.clearTimeout(timeout)
     }
   }
 
