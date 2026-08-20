@@ -14,7 +14,7 @@ function isSyncResponse(value: unknown): value is SyncResponse {
 export class HttpSyncClient implements SyncClient {
   constructor(
     private readonly baseUrl: string,
-    private readonly fetcher: typeof fetch = fetch,
+    private readonly fetcher: typeof fetch = (input, init) => globalThis.fetch(input, init),
   ) {}
 
   async sync(request: SyncRequest, telegramInitData: string): Promise<SyncResponse> {
