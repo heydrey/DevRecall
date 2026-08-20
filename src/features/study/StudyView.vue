@@ -30,7 +30,7 @@ onMounted(async () => {
       : progressStore.settings.sessionMinutes
     await studyStore.startRandom({ topicId, pool, minutes })
   } else {
-    await studyStore.start(mode, String(route.query.topicId ?? 'javascript'))
+    await studyStore.start(mode, String(route.query.topicId ?? 'javascript'), route.query.sectionId ? String(route.query.sectionId) : undefined)
   }
   loading.value = false
 })

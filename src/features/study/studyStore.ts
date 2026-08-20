@@ -5,12 +5,13 @@ import type { Card } from '../content/types'
 import { useProgressStore } from '../progress/progressStore'
 import type { ReviewRating } from '../progress/types'
 import {
+  buildFocusedSession,
   buildPlannedSession,
   buildRandomSession,
   type RandomSessionOptions,
 } from './sessionBuilder'
 
-export type StudyMode = 'today' | 'topic' | 'favorites' | 'difficult' | 'random' | 'mistakes'
+export type StudyMode = 'today' | 'topic' | 'section' | 'favorites' | 'difficult' | 'random' | 'mistakes'
 
 const repository = new StaticCardRepository()
 
@@ -26,6 +27,7 @@ export const useStudyStore = defineStore('study', () => {
   const sessionCardIds = ref<string[]>([])
   const mistakeCardIds = ref<string[]>([])
   const lastTopicId = ref('javascript')
+  const lastSectionId = ref<string | undefined>()
 
   const currentCard = computed(() => cards.value[currentIndex.value] ?? null)
   const completedCount = computed(() => Math.min(currentIndex.value, cards.value.length))
@@ -46,9 +48,10 @@ export const useStudyStore = defineStore('study', () => {
     ratings.value = { again: 0, hard: 0, good: 0, easy: 0 }
   }
 
-  async function start(nextMode: StudyMode, topicId = 'javascript'): Promise<void> {
+  async function start(nextMode: StudyMode, topicId = 'javascript', sectionId?: string): Promise<void> {
     const progressStore = useProgressStore()
     lastTopicId.value = topicId
+    lastSectionId.value = sectionId
     randomOptions.value = null
 
     if (nextMode === 'today') {
@@ -61,19 +64,21 @@ export const useStudyStore = defineStore('study', () => {
       return
     }
 
-    const source = nextMode === 'topic'
+    const topicCards = nextMode === 'topic' || nextMode === 'section'
       ? await repository.getCardsByTopic(topicId)
+      : null
+    const source = topicCards
+      ? nextMode === 'section' && sectionId
+        ? topicCards.filter((card) => card.sectionId === sectionId)
+        : topicCards
       : await repository.getCards()
-    const due = source.filter((card) => progressStore.isDue(card.id))
-    const fresh = source.filter((card) => !progressStore.progress[card.id])
-    const studied = source.filter((card) => progressStore.progress[card.id] && !progressStore.isDue(card.id))
 
     if (nextMode === 'favorites') {
       resetSession('favorites', source.filter((card) => progressStore.isFavorite(card.id)))
     } else if (nextMode === 'difficult') {
       resetSession('difficult', progressStore.difficultCards(source))
     } else {
-      resetSession('topic', [...due, ...fresh, ...studied])
+      resetSession(nextMode === 'section' ? 'section' : 'topic', buildFocusedSession(source, progressStore.progress))
     }
   }
 
@@ -103,7 +108,7 @@ export const useStudyStore = defineStore('study', () => {
       await repeatMistakes()
       return
     }
-    await start(mode.value, lastTopicId.value)
+    await start(mode.value, lastTopicId.value, lastSectionId.value)
   }
 
   function revealAnswer(): void {

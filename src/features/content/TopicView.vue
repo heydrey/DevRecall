@@ -53,10 +53,15 @@ const topicBadge = computed(() => {
     <section>
       <div class="section-heading"><div><span class="eyebrow">Содержание</span><h2>Разделы</h2></div></div>
       <div class="section-list">
-        <article v-for="section in topic.sections" :key="section.id">
+        <RouterLink
+          v-for="section in topic.sections"
+          :key="section.id"
+          :to="{ path: '/study', query: { mode: 'section', topicId: topic.id, sectionId: section.id } }"
+        >
           <div><strong>{{ section.title }}</strong><span>{{ section.description }}</span></div>
           <b>{{ cards.filter((card) => card.sectionId === section.id).length }}</b>
-        </article>
+          <ArrowRight :size="19" />
+        </RouterLink>
       </div>
     </section>
   </div>
@@ -77,8 +82,10 @@ const topicBadge = computed(() => {
 .mini-stats strong { font-size:1.3rem; }
 .mini-stats span { color:var(--text-muted); font-size:.75rem; }
 .section-list { display:grid; gap:10px; }
-.section-list article { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:17px; border:1px solid var(--border-subtle); border-radius:20px; background:var(--surface); }
+.section-list a { display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:12px; padding:17px; border:1px solid var(--border-subtle); border-radius:20px; background:var(--surface); color:inherit; text-decoration:none; }
+.section-list a:active { transform:scale(.99); }
 .section-list div { display:flex; min-width:0; flex-direction:column; gap:4px; }
 .section-list span { color:var(--text-muted); font-size:.8rem; line-height:1.35; }
 .section-list b { display:grid; width:34px; height:34px; place-items:center; border-radius:12px; background:var(--primary-soft); color:var(--primary); }
+.section-list svg { color:var(--text-muted); }
 </style>

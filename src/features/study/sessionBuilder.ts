@@ -42,6 +42,23 @@ function dueTimestamp(card: Card, progress: Record<string, CardProgress>): numbe
   return dueAt ? new Date(dueAt).getTime() : Number.POSITIVE_INFINITY
 }
 
+export function buildFocusedSession(
+  cards: Card[],
+  progress: Record<string, CardProgress>,
+  random: () => number = Math.random,
+  now = new Date(),
+): Card[] {
+  const due = cards.filter((card) => dueTimestamp(card, progress) <= now.getTime())
+  const dueIds = new Set(due.map((card) => card.id))
+  const unseen = cards.filter((card) => !(progress[card.id]?.repetitions ?? 0) && !dueIds.has(card.id))
+  const studied = cards.filter((card) => !dueIds.has(card.id) && (progress[card.id]?.repetitions ?? 0) > 0)
+  return [
+    ...shuffleCards(due, random),
+    ...shuffleCards(unseen, random),
+    ...shuffleCards(studied, random),
+  ]
+}
+
 export function buildPlannedSession(cards: Card[], options: PlannedSessionOptions): Card[] {
   const now = options.now ?? new Date()
   const due = cards
