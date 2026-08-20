@@ -1,4 +1,5 @@
 import { allowOnly, type ApiRequest, type ApiResponse } from './_lib/http.js'
+import { database } from './_lib/database.js'
 
 interface TelegramGetMeResponse {
   ok: boolean
@@ -23,8 +24,26 @@ async function telegramStatus(): Promise<{ configured: boolean; ok: boolean; use
   }
 }
 
+async function databaseStatus(): Promise<{ configured: boolean; ok: boolean; code?: string; message?: string }> {
+  const configured = Boolean(process.env.SUPABASE_URL?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim())
+  if (!configured) return { configured: false, ok: false, message: 'Не заданы SUPABASE_URL или SUPABASE_SERVICE_ROLE_KEY.' }
+  try {
+    const client = database()
+    const { error } = await client.from('users').select('id').limit(1)
+    if (error) return { configured: true, ok: false, code: error.code, message: error.message }
+    return { configured: true, ok: true }
+  } catch (error) {
+    return {
+      configured: true,
+      ok: false,
+      message: error instanceof Error ? error.message : 'Неизвестная ошибка базы.',
+    }
+  }
+}
+
 export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
   if (!allowOnly(request, response, 'GET')) return
-  const telegram = await telegramStatus()
-  response.status(telegram.ok ? 200 : 503).json({ status: telegram.ok ? 'ok' : 'degraded', telegram, time: new Date().toISOString() })
+  const [telegram, database] = await Promise.all([telegramStatus(), databaseStatus()])
+  const ok = telegram.ok && database.ok
+  response.status(ok ? 200 : 503).json({ status: ok ? 'ok' : 'degraded', telegram, database, time: new Date().toISOString() })
 }
