@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ArrowRight, Flame, Shuffle, Sparkles, UserRound } from '@lucide/vue'
+import { ArrowRight, BrainCircuit, Flame, Shuffle, Sparkles, UserRound } from '@lucide/vue'
 import { RouterLink } from 'vue-router'
 import { StaticCardRepository } from '../content/StaticCardRepository'
 import type { Card, Topic } from '../content/types'
@@ -97,6 +97,11 @@ const cardWord = (count: number) => {
       </div>
     </section>
 
+    <section class="training-note">
+      <div><BrainCircuit :size="22" /></div>
+      <p><strong>Это тренировка, а не экзамен</strong><span>Не знаете ответ — попросите подсказку или объяснение. Найденный пробел уже считается полезным результатом.</span></p>
+    </section>
+
     <section>
       <div class="section-heading">
         <div><span class="eyebrow">Кратко</span><h2>Ваш прогресс</h2></div>
@@ -168,6 +173,9 @@ const cardWord = (count: number) => {
 .study-hero p { max-width:500px; margin:0 0 22px; line-height:1.55; opacity:.78; }
 .study-hero__actions { display:flex; flex-wrap:wrap; gap:10px; }
 .hero-random-button { border:1px solid rgb(255 255 255 / 24%); background:rgb(255 255 255 / 12%); box-shadow:none; color:white; }
+.training-note { display:flex; align-items:center; gap:13px; padding:15px 17px; border:1px solid var(--border-subtle); border-radius:22px; background:var(--surface); box-shadow:var(--shadow-sm); }
+.training-note > div { display:grid; width:44px; height:44px; flex:none; place-items:center; border-radius:15px; background:var(--primary-soft); color:var(--primary); }
+.training-note p { display:flex; margin:0; flex-direction:column; gap:3px; }.training-note strong { font-size:.88rem; }.training-note span { color:var(--text-muted); font-size:.76rem; line-height:1.45; }
 .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
 .stat-tile { display:flex; min-height:120px; flex-direction:column; justify-content:flex-end; gap:3px; padding:16px; border:1px solid var(--border-subtle); border-radius:22px; background:var(--surface); box-shadow:var(--shadow-sm); }
 .stat-tile strong { font-size:1.65rem; letter-spacing:-.04em; }

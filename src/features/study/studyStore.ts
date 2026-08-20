@@ -19,6 +19,8 @@ export const useStudyStore = defineStore('study', () => {
   const cards = ref<Card[]>([])
   const currentIndex = ref(0)
   const answerVisible = ref(false)
+  const hintStage = ref<0 | 1 | 2>(0)
+  const learningMode = ref(false)
   const startedAt = ref<string | null>(null)
   const finished = ref(false)
   const ratings = ref<Record<ReviewRating, number>>({ again: 0, hard: 0, good: 0, easy: 0 })
@@ -26,26 +28,46 @@ export const useStudyStore = defineStore('study', () => {
   const randomOptions = ref<RandomSessionOptions | null>(null)
   const sessionCardIds = ref<string[]>([])
   const mistakeCardIds = ref<string[]>([])
+  const answeredCardIds = ref<string[]>([])
+  const requeuedCardIds = ref<string[]>([])
+  const newCardIds = ref<string[]>([])
+  const learnedNewCardIds = ref<string[]>([])
+  const currentStreak = ref(0)
+  const bestStreak = ref(0)
   const lastTopicId = ref('javascript')
   const lastSectionId = ref<string | undefined>()
 
   const currentCard = computed(() => cards.value[currentIndex.value] ?? null)
   const completedCount = computed(() => Math.min(currentIndex.value, cards.value.length))
+  const completedUniqueCount = computed(() => answeredCardIds.value.length)
+  const newCardsLearnedCount = computed(() => learnedNewCardIds.value.length)
+  const rememberedCount = computed(() => ratings.value.hard + ratings.value.good + ratings.value.easy)
   const progressPercent = computed(() => {
     if (!cards.value.length) return 0
     return Math.round((completedCount.value / cards.value.length) * 100)
   })
 
   function resetSession(nextMode: StudyMode, nextCards: Card[]): void {
+    const progressStore = useProgressStore()
     mode.value = nextMode
     cards.value = nextCards
     sessionCardIds.value = nextCards.map((card) => card.id)
     mistakeCardIds.value = []
     currentIndex.value = 0
     answerVisible.value = false
+    hintStage.value = 0
+    learningMode.value = false
     finished.value = nextCards.length === 0
     startedAt.value = new Date().toISOString()
     ratings.value = { again: 0, hard: 0, good: 0, easy: 0 }
+    answeredCardIds.value = []
+    requeuedCardIds.value = []
+    newCardIds.value = [...new Set(nextCards
+      .filter((card) => !(progressStore.progress[card.id]?.repetitions ?? 0))
+      .map((card) => card.id))]
+    learnedNewCardIds.value = []
+    currentStreak.value = 0
+    bestStreak.value = 0
   }
 
   async function start(nextMode: StudyMode, topicId = 'javascript', sectionId?: string): Promise<void> {
@@ -115,24 +137,49 @@ export const useStudyStore = defineStore('study', () => {
     answerVisible.value = true
   }
 
+  function revealHint(): void {
+    hintStage.value = hintStage.value === 0 ? 1 : 2
+  }
+
+  function startLearning(): void {
+    learningMode.value = true
+    answerVisible.value = true
+  }
+
   function rate(rating: ReviewRating): void {
     const progressStore = useProgressStore()
     const card = currentCard.value
     if (!card || !answerVisible.value) return
 
-    progressStore.recordReview(card.id, rating)
-    ratings.value = { ...ratings.value, [rating]: ratings.value[rating] + 1 }
+    const effectiveRating: ReviewRating = learningMode.value ? 'again' : rating
+    progressStore.recordReview(card.id, effectiveRating)
+    ratings.value = { ...ratings.value, [effectiveRating]: ratings.value[effectiveRating] + 1 }
 
-    if ((rating === 'again' || rating === 'hard') && !mistakeCardIds.value.includes(card.id)) {
+    if (!answeredCardIds.value.includes(card.id)) answeredCardIds.value = [...answeredCardIds.value, card.id]
+    if (newCardIds.value.includes(card.id) && !learnedNewCardIds.value.includes(card.id)) {
+      learnedNewCardIds.value = [...learnedNewCardIds.value, card.id]
+    }
+
+    if (effectiveRating === 'good' || effectiveRating === 'easy') {
+      currentStreak.value += 1
+      bestStreak.value = Math.max(bestStreak.value, currentStreak.value)
+    } else {
+      currentStreak.value = 0
+    }
+
+    if ((effectiveRating === 'again' || effectiveRating === 'hard') && !mistakeCardIds.value.includes(card.id)) {
       mistakeCardIds.value = [...mistakeCardIds.value, card.id]
     }
-    if (rating === 'again' && cards.value.length > 1) {
+    if (effectiveRating === 'again' && !requeuedCardIds.value.includes(card.id)) {
       const insertAt = Math.min(currentIndex.value + 5, cards.value.length)
       cards.value.splice(insertAt, 0, card)
+      requeuedCardIds.value = [...requeuedCardIds.value, card.id]
     }
 
     currentIndex.value += 1
     answerVisible.value = false
+    hintStage.value = 0
+    learningMode.value = false
     finished.value = currentIndex.value >= cards.value.length
   }
 
@@ -146,6 +193,8 @@ export const useStudyStore = defineStore('study', () => {
     currentIndex,
     currentCard,
     answerVisible,
+    hintStage,
+    learningMode,
     startedAt,
     finished,
     ratings,
@@ -153,13 +202,24 @@ export const useStudyStore = defineStore('study', () => {
     randomOptions,
     sessionCardIds,
     mistakeCardIds,
+    answeredCardIds,
+    requeuedCardIds,
+    newCardIds,
+    learnedNewCardIds,
+    currentStreak,
+    bestStreak,
     completedCount,
+    completedUniqueCount,
+    newCardsLearnedCount,
+    rememberedCount,
     progressPercent,
     start,
     startRandom,
     repeatMistakes,
     restartSession,
     revealAnswer,
+    revealHint,
+    startLearning,
     rate,
     toggleFavorite,
   }
