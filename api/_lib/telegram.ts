@@ -38,7 +38,6 @@ export function verifyTelegramInitData(rawInitData: string, now = Date.now()): V
   if (!receivedHash || !/^[a-f0-9]{64}$/i.test(receivedHash)) throw new ApiError(401, 'Подпись Telegram отсутствует.')
 
   params.delete('hash')
-  params.delete('signature')
   const dataCheckString = [...params.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([key, value]) => `${key}=${value}`)
