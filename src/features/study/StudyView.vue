@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { ArrowLeft, BookOpenCheck, BrainCircuit, Check, Lightbulb, RotateCcw, Sparkles, Star, X } from '@lucide/vue'
+import { ArrowLeft, BookOpenCheck, BrainCircuit, Check, CircleCheck, CircleHelp, Lightbulb, RotateCcw, Sparkles, Star, X } from '@lucide/vue'
 import { useRoute, useRouter } from 'vue-router'
 import MarkdownContent from '../../shared/markdown/MarkdownContent.vue'
 import { StaticCardRepository } from '../content/StaticCardRepository'
@@ -10,6 +10,7 @@ import { useStudyStore, type StudyMode } from './studyStore'
 import type { RandomPool, SessionMinutes } from './sessionBuilder'
 import { buildAnswerLead, buildKeywordHint } from './cardHints'
 import { explainCard, hasCachedExplanation, isAiExplanationAvailable, type ExplanationMode } from './aiExplanation'
+import { buildSessionQuiz, type QuizQuestion } from './quizBuilder'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,6 +24,12 @@ const aiText = ref('')
 const aiMode = ref<ExplanationMode | null>(null)
 const aiCached = ref(false)
 const aiAvailable = ref(false)
+const quizActive = ref(false)
+const quizFinished = ref(false)
+const quizQuestions = ref<QuizQuestion[]>([])
+const quizIndex = ref(0)
+const quizSelectedOptionId = ref<string | null>(null)
+const quizCorrectCount = ref(0)
 
 onMounted(async () => {
   const mode = (route.query.mode as StudyMode | undefined) ?? 'today'
@@ -55,6 +62,18 @@ const showAiTools = computed(() => aiAvailable.value || Boolean(studyStore.curre
 const durationMinutes = computed(() => {
   if (!studyStore.startedAt) return 0
   return Math.max(1, Math.round((Date.now() - new Date(studyStore.startedAt).getTime()) / 60000))
+})
+const uniqueSessionCardCount = computed(() => new Set(studyStore.cards.map((card) => card.id)).size)
+const canStartQuiz = computed(() => uniqueSessionCardCount.value >= 2)
+const currentQuizQuestion = computed(() => quizQuestions.value[quizIndex.value] ?? null)
+const quizSelectionCorrect = computed(() => Boolean(
+  currentQuizQuestion.value
+  && quizSelectedOptionId.value === currentQuizQuestion.value.correctOptionId,
+))
+const quizResultTitle = computed(() => {
+  if (quizCorrectCount.value === quizQuestions.value.length) return 'Все связи на месте!'
+  if (quizCorrectCount.value >= Math.ceil(quizQuestions.value.length * 0.6)) return 'Хорошее закрепление!'
+  return 'Материал уже стал знакомее!'
 })
 
 const ratingOptions: Array<{ value: ReviewRating; label: string; hint: string; className: string }> = [
@@ -98,6 +117,37 @@ async function requestAiExplanation(mode: ExplanationMode): Promise<void> {
     aiLoading.value = false
   }
 }
+
+function startQuiz(): void {
+  quizQuestions.value = buildSessionQuiz(studyStore.cards)
+  if (!quizQuestions.value.length) return
+  quizIndex.value = 0
+  quizSelectedOptionId.value = null
+  quizCorrectCount.value = 0
+  quizFinished.value = false
+  quizActive.value = true
+}
+
+function selectQuizOption(optionId: string): void {
+  if (quizSelectedOptionId.value || !currentQuizQuestion.value) return
+  quizSelectedOptionId.value = optionId
+  if (optionId === currentQuizQuestion.value.correctOptionId) quizCorrectCount.value += 1
+}
+
+function nextQuizQuestion(): void {
+  if (!quizSelectedOptionId.value) return
+  if (quizIndex.value >= quizQuestions.value.length - 1) {
+    quizFinished.value = true
+    return
+  }
+  quizIndex.value += 1
+  quizSelectedOptionId.value = null
+}
+
+function closeQuiz(): void {
+  quizActive.value = false
+  quizFinished.value = false
+}
 </script>
 
 <template>
@@ -113,6 +163,49 @@ async function requestAiExplanation(mode: ExplanationMode): Promise<void> {
 
     <main v-if="loading" class="study-center"><span class="loader" /><p>Готовим карточки…</p></main>
 
+    <main v-else-if="quizActive" class="study-center quiz-center">
+      <section v-if="!quizFinished && currentQuizQuestion" class="quiz-card">
+        <header class="quiz-card__header">
+          <button class="icon-button" aria-label="Вернуться к итогам" @click="closeQuiz"><X :size="19" /></button>
+          <div><span>Закрепление</span><strong>{{ quizIndex + 1 }} / {{ quizQuestions.length }}</strong></div>
+        </header>
+        <div class="quiz-progress"><i :style="{ width: `${((quizIndex + (quizSelectedOptionId ? 1 : 0)) / quizQuestions.length) * 100}%` }" /></div>
+        <span class="eyebrow">Найдите подходящее объяснение</span>
+        <h1>{{ currentQuizQuestion.prompt }}</h1>
+        <div class="quiz-options">
+          <button
+            v-for="(option, optionIndex) in currentQuizQuestion.options"
+            :key="option.id"
+            :disabled="Boolean(quizSelectedOptionId)"
+            :class="{
+              'quiz-option--correct': quizSelectedOptionId && option.id === currentQuizQuestion.correctOptionId,
+              'quiz-option--wrong': quizSelectedOptionId === option.id && option.id !== currentQuizQuestion.correctOptionId,
+            }"
+            @click="selectQuizOption(option.id)"
+          >
+            <b>{{ String.fromCharCode(65 + optionIndex) }}</b><span>{{ option.text }}</span>
+            <CircleCheck v-if="quizSelectedOptionId && option.id === currentQuizQuestion.correctOptionId" :size="20" />
+          </button>
+        </div>
+        <section v-if="quizSelectedOptionId" class="quiz-feedback" :class="{ 'quiz-feedback--correct': quizSelectionCorrect }">
+          <div><component :is="quizSelectionCorrect ? CircleCheck : CircleHelp" :size="21" /><strong>{{ quizSelectionCorrect ? 'Верно — связь уже узнаётся' : 'Пока не совпало — сейчас закрепим' }}</strong></div>
+          <MarkdownContent :source="currentQuizQuestion.answer" />
+        </section>
+        <button v-if="quizSelectedOptionId" class="primary-button quiz-next" @click="nextQuizQuestion">{{ quizIndex === quizQuestions.length - 1 ? 'Увидеть результат' : 'Следующий вопрос' }}<ArrowLeft class="arrow-forward" :size="18" /></button>
+      </section>
+
+      <section v-else class="result-card quiz-result">
+        <div class="result-card__icon"><CircleCheck :size="30" /></div>
+        <span class="eyebrow">Закрепление завершено</span>
+        <h1>{{ quizResultTitle }}</h1>
+        <p>Вы связали {{ quizCorrectCount }} из {{ quizQuestions.length }} вопросов с правильными объяснениями.</p>
+        <div class="quiz-score"><strong>{{ quizCorrectCount }} / {{ quizQuestions.length }}</strong><span>верных связей</span></div>
+        <p class="result-insight">Этот результат не меняет интервалы повторения и серию. Мини-тест нужен только для спокойного закрепления сразу после занятия.</p>
+        <button class="primary-button" @click="startQuiz"><RotateCcw :size="18" />Пройти ещё раз</button>
+        <button class="secondary-button" @click="closeQuiz">Вернуться к итогам сессии</button>
+      </section>
+    </main>
+
     <main v-else-if="studyStore.finished" class="study-center">
       <section v-if="studyStore.cards.length" class="result-card">
         <div class="result-card__icon"><Check :size="30" /></div>
@@ -126,6 +219,7 @@ async function requestAiExplanation(mode: ExplanationMode): Promise<void> {
           <div><strong>{{ studyStore.rememberedCount }}</strong><span>ответов вспомнили</span></div>
           <div><strong>{{ studyStore.bestStreak }}</strong><span>лучшая серия</span></div>
         </div>
+        <button v-if="canStartQuiz" class="primary-button" @click="startQuiz"><BrainCircuit :size="18" />Закрепить материал · {{ Math.min(5, uniqueSessionCardCount) }} вопросов</button>
         <button v-if="studyStore.mistakeCardIds.length" class="primary-button" @click="studyStore.repeatMistakes"><RotateCcw :size="18" />Закрепить сложные</button>
         <button class="secondary-button" @click="studyStore.restartSession"><RotateCcw :size="18" />{{ studyStore.mode === 'random' ? 'Ещё одна случайная тренировка' : 'Пройти ещё раз' }}</button>
         <RouterLink class="back-link back-link--center" to="/">На главную</RouterLink>
@@ -254,8 +348,11 @@ async function requestAiExplanation(mode: ExplanationMode): Promise<void> {
 .result-grid strong { font-size:1.35rem; }.result-grid span { color:var(--text-muted); font-size:.72rem; }
 .result-card .primary-button,.result-card .secondary-button { width:100%; margin-top:9px; }
 .back-link--center { justify-content:center; margin-top:20px; }
+.quiz-center { align-items:start; padding:18px 16px 34px; }.quiz-card { width:min(100%,680px); padding:22px; border:1px solid var(--border-subtle); border-radius:28px; background:var(--surface); box-shadow:var(--shadow-lg); }.quiz-card__header { display:flex; align-items:center; justify-content:space-between; gap:14px; }.quiz-card__header > div { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }.quiz-card__header span { color:var(--text-muted); font-size:.68rem; }.quiz-card__header strong { font-size:.78rem; }.quiz-progress { height:7px; margin:15px 0 26px; overflow:hidden; border-radius:999px; background:var(--surface-muted); }.quiz-progress i { display:block; height:100%; border-radius:inherit; background:var(--primary); transition:width 180ms ease; }.quiz-card h1 { margin:9px 0 22px; font-size:clamp(1.35rem,5vw,1.9rem); line-height:1.3; }.quiz-options { display:grid; gap:9px; }.quiz-options button { display:grid; grid-template-columns:30px 1fr auto; align-items:start; gap:10px; width:100%; padding:13px; border:1px solid var(--border-subtle); border-radius:16px; background:var(--surface); color:var(--text); text-align:left; cursor:pointer; }.quiz-options button > b { display:grid; width:28px; height:28px; place-items:center; border-radius:10px; background:var(--surface-muted); color:var(--primary); font-size:.72rem; }.quiz-options button > span { padding-top:3px; font-size:.78rem; line-height:1.48; }.quiz-options button:disabled { opacity:1; cursor:default; }.quiz-options .quiz-option--correct { border-color:#8dcfa6; background:#effaf3; }.quiz-options .quiz-option--correct > b { background:#d8f2e2; color:#237143; }.quiz-options .quiz-option--correct > svg { margin-top:4px; color:#237143; }.quiz-options .quiz-option--wrong { border-color:#e7c77d; background:#fff8e7; }.quiz-feedback { margin-top:14px; padding:16px; border-radius:18px; background:#fff8e7; }.quiz-feedback > div { display:flex; align-items:center; gap:9px; margin-bottom:12px; color:#8b641c; }.quiz-feedback > div strong { font-size:.82rem; }.quiz-feedback--correct { background:#effaf3; }.quiz-feedback--correct > div { color:#237143; }.quiz-feedback :deep(.markdown-content) { font-size:.82rem; }.quiz-next { width:100%; margin-top:14px; }.arrow-forward { transform:rotate(180deg); }.quiz-result .quiz-score { display:flex; flex-direction:column; gap:3px; margin:0 0 20px; padding:18px; border-radius:20px; background:var(--primary-soft); }.quiz-score strong { color:var(--primary); font-size:2rem; }.quiz-score span { color:var(--text-muted); font-size:.72rem; }
 @keyframes answer-in { from { opacity:0; transform:translateY(8px); } }
 @media (prefers-color-scheme:dark) { .rating--again,.rating--hard,.rating--good,.rating--easy { background:var(--surface-muted); } }
 @media (prefers-color-scheme:dark) { .ai-error { background:var(--surface-muted); color:#ff9f98; } }
 @media (max-width:440px) { .ai-tools__buttons { grid-template-columns:1fr; } }
+@media (max-width:440px) { .quiz-card { padding:17px; border-radius:23px; }.quiz-options button { grid-template-columns:30px 1fr; }.quiz-options button > svg { display:none; } }
+@media (prefers-color-scheme:dark) { .quiz-options .quiz-option--correct,.quiz-options .quiz-option--wrong,.quiz-feedback,.quiz-feedback--correct { background:var(--surface-muted); } }
 </style>
