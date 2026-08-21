@@ -9,7 +9,8 @@ export interface AdminUserMetric {
   deviceCount: number
   reviewCount: number
   studiedCards: number
-  aiRequests: number
+  aiUses: number
+  aiApiRequests: number
 }
 
 export interface AdminOverview {
@@ -28,6 +29,7 @@ export interface AdminOverview {
     trackingError?: string
     provider: string
     model: string
+    usesToday: number
     requestsToday: number
     dailyRequestLimit: number
     estimatedRequestsRemaining: number
@@ -37,13 +39,20 @@ export interface AdminOverview {
     latestRateLimits: Record<string, unknown>
   }
   users: AdminUserMetric[]
+  pagination: {
+    page: number
+    pageSize: number
+    totalItems: number
+    totalPages: number
+  }
 }
 
-export async function fetchAdminOverview(): Promise<AdminOverview> {
+export async function fetchAdminOverview(page = 1, pageSize = 10): Promise<AdminOverview> {
   const initData = useProfileStore().getTelegramInitData()
   if (!initData) throw new Error('Админ-панель доступна только внутри Telegram.')
   const baseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') ?? ''
-  const response = await globalThis.fetch(`${baseUrl}/api/admin/overview`, {
+  const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+  const response = await globalThis.fetch(`${baseUrl}/api/admin/overview?${query}`, {
     headers: { Authorization: `tma ${initData}` },
   })
   const body = await response.json() as AdminOverview & { error?: string }

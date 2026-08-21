@@ -52,7 +52,22 @@ function saveCache(cardId: string, mode: ExplanationMode, value: AiExplanation):
 
 export async function explainCard(card: Card, mode: ExplanationMode): Promise<AiExplanation> {
   const cached = readCache(card.id, mode)
-  if (cached) return cached
+  if (cached) {
+    const initData = getTelegramWebApp()?.initData
+    if (initData && navigator.onLine) {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') ?? ''
+      try {
+        await globalThis.fetch(`${baseUrl}/api/ai/cache-hit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `tma ${initData}` },
+          body: JSON.stringify({ cardId: card.id, mode }),
+        })
+      } catch {
+        // Кэшированный ответ остаётся доступен, даже если метрика временно не записалась.
+      }
+    }
+    return cached
+  }
   if (!navigator.onLine) throw new Error('Для нового объяснения нужен интернет. Ранее открытые объяснения доступны офлайн.')
 
   const initData = getTelegramWebApp()?.initData

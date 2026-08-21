@@ -34,12 +34,23 @@ function newer(left: string | undefined, right: string | undefined): string | un
   return left > right ? left : right
 }
 
+function queryNumber(value: string | string[] | undefined, fallback: number, maximum: number): number {
+  const parsed = Number(Array.isArray(value) ? value[0] : value)
+  return Number.isInteger(parsed) && parsed > 0 ? Math.min(parsed, maximum) : fallback
+}
+
+function isCacheHit(event: AiUsageRow): boolean {
+  return event.rate_limits?.cacheHit === true
+}
+
 export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
   if (!allowOnly(request, response, 'GET')) return
   try {
     const telegramUser = verifyTelegramInitData(authorizationInitData(request))
     assertAdmin(telegramUser.id)
     const { client } = await resolveUser(telegramUser)
+    const requestedPage = queryNumber(request.query?.page, 1, 100_000)
+    const pageSize = queryNumber(request.query?.pageSize, 10, 50)
 
     const [usersResult, devicesResult, reviewsResult, progressResult, aiResult] = await Promise.all([
       client.from('users').select('id, telegram_id, display_name, created_at, updated_at').order('created_at', { ascending: false }),
@@ -76,8 +87,12 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     for (const card of progress) {
       if (card.repetitions > 0) cardsByUser.set(card.user_id, (cardsByUser.get(card.user_id) ?? 0) + 1)
     }
-    const aiByUser = new Map<string, number>()
-    for (const event of aiUsage) aiByUser.set(event.user_id, (aiByUser.get(event.user_id) ?? 0) + 1)
+    const aiUsesByUser = new Map<string, number>()
+    const aiRequestsByUser = new Map<string, number>()
+    for (const event of aiUsage) {
+      aiUsesByUser.set(event.user_id, (aiUsesByUser.get(event.user_id) ?? 0) + 1)
+      if (!isCacheHit(event)) aiRequestsByUser.set(event.user_id, (aiRequestsByUser.get(event.user_id) ?? 0) + 1)
+    }
 
     const userMetrics = users.map((user) => {
       const lastSeenAt = newer(user.updated_at, lastSeenByUser.get(user.id)) ?? user.updated_at
@@ -90,16 +105,21 @@ export default async function handler(request: ApiRequest, response: ApiResponse
         deviceCount: devicesByUser.get(user.id) ?? 0,
         reviewCount: reviewsByUser.get(user.id) ?? 0,
         studiedCards: cardsByUser.get(user.id) ?? 0,
-        aiRequests: aiByUser.get(user.id) ?? 0,
+        aiUses: aiUsesByUser.get(user.id) ?? 0,
+        aiApiRequests: aiRequestsByUser.get(user.id) ?? 0,
       }
     }).sort((left, right) => right.lastSeenAt.localeCompare(left.lastSeenAt))
 
     const todayAi = aiUsage.filter((event) => Date.parse(event.created_at) >= daySince)
+    const todayApiRequests = todayAi.filter((event) => !isCacheHit(event))
     const dailyRequestLimit = numberEnv('GROQ_DAILY_REQUEST_LIMIT', 1_000)
     const dailyTokenLimit = numberEnv('GROQ_DAILY_TOKEN_LIMIT', 200_000)
-    const requestsToday = todayAi.length
-    const tokensToday = todayAi.reduce((sum, event) => sum + Number(event.total_tokens || 0), 0)
-    const latestAi = aiUsage[0]
+    const requestsToday = todayApiRequests.length
+    const tokensToday = todayApiRequests.reduce((sum, event) => sum + Number(event.total_tokens || 0), 0)
+    const latestAi = aiUsage.find((event) => !isCacheHit(event)) ?? aiUsage[0]
+    const totalPages = Math.max(1, Math.ceil(userMetrics.length / pageSize))
+    const page = Math.min(requestedPage, totalPages)
+    const pageStart = (page - 1) * pageSize
 
     response.status(200).json({
       serverTime: new Date(now).toISOString(),
@@ -117,6 +137,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
         trackingError: aiUsageAvailable ? undefined : 'Примените миграцию ai_usage_events в Supabase.',
         provider: latestAi?.provider ?? process.env.AI_PROVIDER?.trim() ?? 'groq',
         model: latestAi?.model ?? process.env.GROQ_MODEL?.trim() ?? process.env.GEMINI_MODEL?.trim() ?? 'не настроена',
+        usesToday: todayAi.length,
         requestsToday,
         dailyRequestLimit,
         estimatedRequestsRemaining: Math.max(0, dailyRequestLimit - requestsToday),
@@ -125,7 +146,13 @@ export default async function handler(request: ApiRequest, response: ApiResponse
         estimatedTokensRemaining: Math.max(0, dailyTokenLimit - tokensToday),
         latestRateLimits: latestAi?.rate_limits ?? {},
       },
-      users: userMetrics,
+      users: userMetrics.slice(pageStart, pageStart + pageSize),
+      pagination: {
+        page,
+        pageSize,
+        totalItems: userMetrics.length,
+        totalPages,
+      },
     })
   } catch (error) {
     sendError(response, error)
