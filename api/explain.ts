@@ -1,4 +1,5 @@
 import { ApiError, allowOnly, authorizationInitData, sendError, type ApiRequest, type ApiResponse } from './_lib/http.js'
+import { resolveUser } from './_lib/database.js'
 import { verifyTelegramInitData } from './_lib/telegram.js'
 
 type ExplanationMode = 'simple' | 'deep'
@@ -15,6 +16,12 @@ interface AiResult {
   provider: 'groq' | 'gemini'
   model: string
   text: string
+  usage: {
+    promptTokens: number
+    completionTokens: number
+    totalTokens: number
+  }
+  rateLimits?: Record<string, string>
 }
 
 const SYSTEM_PROMPT = `Ты — терпеливый наставник по программированию для русскоязычного новичка, который готовится к собеседованию.
@@ -86,14 +93,40 @@ async function requestGroq(card: ExplanationRequest, apiKey: string): Promise<Ai
     }),
     signal: AbortSignal.timeout(27_000),
   })
-  const body = await response.json() as { choices?: Array<{ message?: { content?: string } }>; error?: { message?: string } }
+  const body = await response.json() as {
+    choices?: Array<{ message?: { content?: string } }>
+    usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number }
+    error?: { message?: string }
+  }
   if (!response.ok) {
     console.error(`Groq API: ${response.status} ${body.error?.message ?? 'unknown error'}`)
     throw new ApiError(response.status === 429 ? 429 : 502, response.status === 429 ? 'Лимит бесплатных объяснений временно исчерпан.' : 'ИИ-наставник временно не ответил.')
   }
   const text = body.choices?.[0]?.message?.content?.trim()
   if (!text) throw new ApiError(502, 'ИИ-наставник вернул пустой ответ.')
-  return { provider: 'groq', model, text }
+  const headerNames = [
+    'x-ratelimit-limit-requests',
+    'x-ratelimit-remaining-requests',
+    'x-ratelimit-reset-requests',
+    'x-ratelimit-limit-tokens',
+    'x-ratelimit-remaining-tokens',
+    'x-ratelimit-reset-tokens',
+  ]
+  const rateLimits = Object.fromEntries(headerNames.flatMap((name) => {
+    const value = response.headers.get(name)
+    return value ? [[name, value]] : []
+  }))
+  return {
+    provider: 'groq',
+    model,
+    text,
+    usage: {
+      promptTokens: body.usage?.prompt_tokens ?? 0,
+      completionTokens: body.usage?.completion_tokens ?? 0,
+      totalTokens: body.usage?.total_tokens ?? 0,
+    },
+    rateLimits,
+  }
 }
 
 async function requestGemini(card: ExplanationRequest, apiKey: string): Promise<AiResult> {
@@ -111,14 +144,27 @@ async function requestGemini(card: ExplanationRequest, apiKey: string): Promise<
     }),
     signal: AbortSignal.timeout(27_000),
   })
-  const body = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>; error?: { message?: string } }
+  const body = await response.json() as {
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+    usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number }
+    error?: { message?: string }
+  }
   if (!response.ok) {
     console.error(`Gemini API: ${response.status} ${body.error?.message ?? 'unknown error'}`)
     throw new ApiError(response.status === 429 ? 429 : 502, response.status === 429 ? 'Лимит бесплатных объяснений временно исчерпан.' : 'ИИ-наставник временно не ответил.')
   }
   const text = body.candidates?.[0]?.content?.parts?.map((part) => part.text ?? '').join('').trim()
   if (!text) throw new ApiError(502, 'ИИ-наставник вернул пустой ответ.')
-  return { provider: 'gemini', model, text }
+  return {
+    provider: 'gemini',
+    model,
+    text,
+    usage: {
+      promptTokens: body.usageMetadata?.promptTokenCount ?? 0,
+      completionTokens: body.usageMetadata?.candidatesTokenCount ?? 0,
+      totalTokens: body.usageMetadata?.totalTokenCount ?? 0,
+    },
+  }
 }
 
 async function explain(card: ExplanationRequest): Promise<AiResult> {
@@ -142,8 +188,21 @@ async function explain(card: ExplanationRequest): Promise<AiResult> {
 export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
   if (!allowOnly(request, response, 'POST')) return
   try {
-    verifyTelegramInitData(authorizationInitData(request))
-    const result = await explain(parseBody(request.body))
+    const card = parseBody(request.body)
+    const telegramUser = verifyTelegramInitData(authorizationInitData(request))
+    const { client, row: user } = await resolveUser(telegramUser)
+    const result = await explain(card)
+    const { error: trackingError } = await client.from('ai_usage_events').insert({
+      user_id: user.id,
+      provider: result.provider,
+      model: result.model,
+      mode: card.mode,
+      prompt_tokens: result.usage.promptTokens,
+      completion_tokens: result.usage.completionTokens,
+      total_tokens: result.usage.totalTokens,
+      rate_limits: result.rateLimits ?? {},
+    })
+    if (trackingError) console.warn(`Не удалось записать расход ИИ [${trackingError.code}]: ${trackingError.message}`)
     response.status(200).json(result)
   } catch (error) {
     sendError(response, error)

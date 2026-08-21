@@ -8,6 +8,7 @@ import FavoritesView from '../features/favorites/FavoritesView.vue'
 import StatisticsView from '../features/statistics/StatisticsView.vue'
 import SettingsView from '../features/settings/SettingsView.vue'
 import ProfileView from '../features/profile/ProfileView.vue'
+import AdminView from '../features/admin/AdminView.vue'
 
 const routes: RouteRecordRaw[] = [
   { path: '/', name: 'home', component: HomeView },
@@ -18,6 +19,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/favorites', name: 'favorites', component: FavoritesView },
   { path: '/statistics', name: 'statistics', component: StatisticsView },
   { path: '/profile', name: 'profile', component: ProfileView },
+  { path: '/admin', name: 'admin', component: AdminView },
   { path: '/settings', name: 'settings', component: SettingsView },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]

@@ -162,10 +162,10 @@ async function requestAiExplanation(mode: ExplanationMode): Promise<void> {
           <span class="answer-block__label">Ответ</span>
           <MarkdownContent :source="studyStore.currentCard.answer" />
           <div v-if="showAiTools" class="ai-tools">
-            <div class="ai-tools__heading"><BrainCircuit :size="19" /><div><strong>Нужно другое объяснение?</strong><span>ИИ разберёт именно эту карточку.</span></div></div>
+            <div class="ai-tools__heading"><BrainCircuit :size="19" /><div><strong>Выберите глубину разбора</strong><span>Оба режима объясняют именно эту карточку.</span></div></div>
             <div class="ai-tools__buttons">
-              <button :disabled="aiLoading" @click="requestAiExplanation('simple')"><Sparkles :size="16" />Объяснить проще</button>
-              <button :disabled="aiLoading" @click="requestAiExplanation('deep')"><BookOpenCheck :size="16" />Копнуть глубже</button>
+              <button :disabled="aiLoading" @click="requestAiExplanation('simple')"><Sparkles :size="17" /><span><strong>Объяснить проще</strong><small>Без жаргона, с аналогией и словарём</small></span></button>
+              <button :disabled="aiLoading" @click="requestAiExplanation('deep')"><BookOpenCheck :size="17" /><span><strong>Копнуть глубже</strong><small>Для собеседования: механизм и нюансы</small></span></button>
             </div>
           </div>
           <div v-if="aiLoading" class="ai-state" aria-live="polite"><span class="loader loader--small" /><span>{{ aiMode === 'deep' ? 'Готовим подробный разбор…' : 'Переводим на простой язык…' }}</span></div>
@@ -208,25 +208,25 @@ async function requestAiExplanation(mode: ExplanationMode): Promise<void> {
 .study-header__progress > div { height:6px; overflow:hidden; border-radius:99px; background:var(--surface-muted); }
 .study-header__progress i { display:block; height:100%; border-radius:inherit; background:var(--primary); transition:width 220ms ease; }
 .icon-button--favorite { color:#e3a52a; }
-.study-content { display:flex; width:min(100%,720px); min-height:calc(100dvh - 80px); margin:0 auto; padding:16px 16px 28px; flex-direction:column; }
+.study-content { display:flex; width:min(100%,720px); min-width:0; min-height:calc(100dvh - 80px); margin:0 auto; padding:16px 16px 28px; flex-direction:column; }
 .persistence-warning { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; padding:11px 14px; border:1px solid #e9c475; border-radius:14px; background:#fff8e7; color:#77510d; font-size:.78rem; }
 .persistence-warning button { border:0; background:transparent; color:inherit; font-size:1.2rem; cursor:pointer; }
-.question-card { flex:1; padding:24px; border:1px solid var(--border-subtle); border-radius:30px; background:var(--surface); box-shadow:var(--shadow-md); }
+.question-card { min-width:0; max-width:100%; flex:1; padding:24px; border:1px solid var(--border-subtle); border-radius:30px; background:var(--surface); box-shadow:var(--shadow-md); }
 .new-card-note { display:flex; align-items:center; gap:10px; margin-bottom:22px; padding:12px 14px; border-radius:17px; background:var(--primary-soft); color:var(--primary); }
 .new-card-note > div { display:flex; flex-direction:column; gap:2px; }.new-card-note strong { font-size:.78rem; }.new-card-note span { color:var(--text-muted); font-size:.7rem; }
 .question-card__meta { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .question-card__meta span,.question-card__meta b { padding:7px 10px; border-radius:999px; background:var(--surface-muted); color:var(--text-muted); font-size:.68rem; font-weight:800; text-transform:uppercase; }
 .question-card h1 { margin:34px 0; font-size:clamp(1.55rem,6vw,2.35rem); line-height:1.25; letter-spacing:-.035em; }
-.answer-block { padding-top:22px; border-top:1px solid var(--border-subtle); animation:answer-in 180ms ease; }
+.answer-block { min-width:0; max-width:100%; padding-top:22px; border-top:1px solid var(--border-subtle); animation:answer-in 180ms ease; }
 .hint-block { display:flex; align-items:flex-start; gap:11px; margin:0 0 22px; padding:14px; border:1px solid color-mix(in srgb,#e5ad32 42%,var(--border-subtle)); border-radius:18px; background:color-mix(in srgb,#fff4cf 70%,var(--surface)); color:#9b6912; animation:answer-in 180ms ease; }
 .hint-block > div { display:flex; flex-direction:column; gap:4px; }.hint-block strong { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; }.hint-block span { color:var(--text); font-size:.88rem; line-height:1.45; }
 .answer-block__label { display:block; margin-bottom:12px; color:var(--primary); font-size:.72rem; font-weight:850; letter-spacing:.08em; text-transform:uppercase; }
 .ai-tools { margin-top:24px; padding-top:18px; border-top:1px solid var(--border-subtle); }
 .ai-tools__heading { display:flex; align-items:center; gap:10px; color:var(--primary); }.ai-tools__heading > div { display:flex; flex-direction:column; gap:2px; }.ai-tools__heading strong { color:var(--text); font-size:.84rem; }.ai-tools__heading span { color:var(--text-muted); font-size:.7rem; }
-.ai-tools__buttons { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }.ai-tools__buttons button { display:flex; min-height:44px; align-items:center; justify-content:center; gap:7px; padding:8px 11px; border:1px solid var(--border-subtle); border-radius:14px; background:var(--surface-muted); color:var(--text); font-size:.75rem; font-weight:800; cursor:pointer; }.ai-tools__buttons button:disabled { opacity:.55; cursor:wait; }
+.ai-tools__buttons { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }.ai-tools__buttons button { display:flex; min-width:0; min-height:58px; align-items:center; justify-content:flex-start; gap:9px; padding:9px 11px; border:1px solid var(--border-subtle); border-radius:14px; background:var(--surface-muted); color:var(--text); text-align:left; cursor:pointer; }.ai-tools__buttons button > span { display:flex; min-width:0; flex-direction:column; gap:2px; }.ai-tools__buttons button strong { font-size:.75rem; }.ai-tools__buttons button small { color:var(--text-muted); font-size:.63rem; font-weight:650; line-height:1.3; }.ai-tools__buttons button:disabled { opacity:.55; cursor:wait; }
 .ai-state { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:12px; padding:16px; border-radius:16px; background:var(--surface-muted); color:var(--text-muted); font-size:.78rem; }.loader--small { width:22px; height:22px; border-width:3px; }
 .ai-error { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; padding:13px 14px; border-radius:16px; background:#fff0ef; color:#a8322b; font-size:.76rem; }.ai-error button { border:0; background:transparent; color:inherit; font-weight:800; cursor:pointer; }
-.ai-answer { margin-top:12px; padding:18px; border:1px solid color-mix(in srgb,var(--primary) 28%,var(--border-subtle)); border-radius:20px; background:color-mix(in srgb,var(--primary-soft) 38%,var(--surface)); }
+.ai-answer { min-width:0; max-width:100%; overflow:hidden; margin-top:12px; padding:18px; border:1px solid color-mix(in srgb,var(--primary) 28%,var(--border-subtle)); border-radius:20px; background:color-mix(in srgb,var(--primary-soft) 38%,var(--surface)); }
 .ai-answer header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; color:var(--primary); }.ai-answer header > div { display:flex; align-items:center; gap:8px; }.ai-answer header strong { font-size:.82rem; }.ai-answer header > span { padding:4px 7px; border-radius:999px; background:var(--surface); color:var(--text-muted); font-size:.62rem; font-weight:800; text-transform:uppercase; }.ai-answer small { display:block; margin-top:14px; color:var(--text-muted); font-size:.66rem; line-height:1.45; }
 .study-actions,.rating-panel { padding:20px 4px 0; }
 .study-actions p,.rating-panel > p { margin:0 0 14px; color:var(--text-muted); font-size:.84rem; line-height:1.45; text-align:center; }

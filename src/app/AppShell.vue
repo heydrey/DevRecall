@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { ChartNoAxesColumnIncreasing, House, Layers3, Star } from '@lucide/vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { startPresenceTracking } from '../features/telegram/presence'
 
 const route = useRoute()
 const hideNavigation = computed(() => Boolean(route.meta.hideNavigation))
+let stopPresence: () => void = () => undefined
+
+onMounted(() => { stopPresence = startPresenceTracking() })
+onBeforeUnmount(() => stopPresence())
 
 const navigationItems = [
   { to: '/', label: 'Главная', icon: House },

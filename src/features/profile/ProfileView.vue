@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ArrowLeft, Cloud, Download, RefreshCw, Settings, Upload, UserRound } from '@lucide/vue'
+import { ArrowLeft, Cloud, Download, RefreshCw, Settings, ShieldCheck, Upload, UserRound } from '@lucide/vue'
+import { fetchAdminOverview } from '../admin/adminClient'
 import { createBackup, downloadBackup, mergeOutbox, parseBackupFile } from '../backup/backupService'
 import { useProgressStore } from '../progress/progressStore'
 import { LocalOutboxRepository } from '../sync/LocalOutboxRepository'
@@ -14,8 +15,18 @@ const outboxRepository = new LocalOutboxRepository()
 const fileInput = ref<HTMLInputElement | null>(null)
 const message = ref<string | null>(null)
 const messageError = ref(false)
+const isAdmin = ref(false)
 
-onMounted(() => profileStore.load())
+onMounted(async () => {
+  await profileStore.load()
+  if (profileStore.user?.mode !== 'telegram') return
+  try {
+    await fetchAdminOverview()
+    isAdmin.value = true
+  } catch {
+    isAdmin.value = false
+  }
+})
 
 const learned = computed(() => Object.values(progressStore.progress).filter((item) => item.repetitions > 0).length)
 const favorites = computed(() => Object.values(progressStore.progress).filter((item) => item.favorite).length)
@@ -107,6 +118,7 @@ async function importData(event: Event): Promise<void> {
     </section>
 
     <RouterLink class="settings-link" to="/settings"><UserRound :size="19" /><span><strong>Настройки обучения</strong><small>Лимиты, длительность, тема и сброс прогресса</small></span></RouterLink>
+    <RouterLink v-if="isAdmin" class="settings-link admin-link" to="/admin"><ShieldCheck :size="19" /><span><strong>Панель администратора</strong><small>Пользователи, активность и расход ИИ</small></span></RouterLink>
   </div>
 </template>
 
@@ -120,5 +132,6 @@ async function importData(event: Event): Promise<void> {
 .profile-stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }.profile-stats article { display:flex; min-height:104px; flex-direction:column; justify-content:flex-end; padding:16px; border:1px solid var(--border-subtle); border-radius:21px; background:var(--surface); }.profile-stats strong { font-size:1.55rem; }.profile-stats span { color:var(--text-muted); font-size:.72rem; }
 .data-card { display:grid; gap:10px; padding:21px; border:1px solid var(--border-subtle); border-radius:26px; background:var(--surface); }.data-card h2 { margin:5px 0 6px; }.data-card p { margin:0 0 8px; color:var(--text-muted); line-height:1.5; }.hidden-input { display:none; }.profile-message { padding:11px 13px; border-radius:13px; background:#eaf8ef; color:#236a3d!important; font-size:.78rem; }.profile-message.error { background:#fff0ef; color:#a8322b!important; }
 .settings-link { display:flex; align-items:center; gap:13px; padding:17px; border:1px solid var(--border-subtle); border-radius:20px; background:var(--surface); color:inherit; text-decoration:none; }.settings-link svg { color:var(--primary); }.settings-link span { display:flex; flex-direction:column; gap:3px; }.settings-link small { color:var(--text-muted); }
+.admin-link { border-color:color-mix(in srgb,var(--primary) 28%,var(--border-subtle)); background:color-mix(in srgb,var(--primary-soft) 44%,var(--surface)); }
 @media(max-width:520px){.profile-hero{grid-template-columns:auto 1fr}.profile-hero>.icon-button{grid-column:1/-1;width:100%}.sync-card{grid-template-columns:auto 1fr}.sync-card>b{grid-column:1/-1;width:fit-content}}
 </style>

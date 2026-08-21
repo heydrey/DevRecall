@@ -12,9 +12,12 @@ const html = computed(() => renderMarkdown(props.source))
 
 <style>
 .markdown-content {
+  min-width: 0;
+  max-width: 100%;
   color: var(--text);
   font-size: 1rem;
   line-height: 1.72;
+  overflow-wrap: anywhere;
 }
 
 .markdown-content > :first-child { margin-top: 0; }
@@ -39,5 +42,32 @@ const html = computed(() => renderMarkdown(props.source))
   padding: 0;
   background: transparent;
   color: inherit;
+}
+.markdown-content table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  -webkit-overflow-scrolling: touch;
+}
+.markdown-content th,
+.markdown-content td {
+  min-width: 132px;
+  padding: 9px 11px;
+  border: 1px solid var(--border-subtle);
+  text-align: left;
+  vertical-align: top;
+}
+.markdown-content th {
+  background: var(--surface-muted);
+  font-size: 0.88em;
+}
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+}
+.markdown-content a {
+  overflow-wrap: anywhere;
 }
 </style>
