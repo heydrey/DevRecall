@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { ArrowLeft, BookOpenCheck, Check, Lightbulb, RotateCcw, Sparkles, Star, X } from '@lucide/vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { ArrowLeft, BookOpenCheck, BrainCircuit, Check, Lightbulb, RotateCcw, Sparkles, Star, X } from '@lucide/vue'
 import { useRoute, useRouter } from 'vue-router'
 import MarkdownContent from '../../shared/markdown/MarkdownContent.vue'
 import { StaticCardRepository } from '../content/StaticCardRepository'
@@ -9,6 +9,7 @@ import type { ReviewRating } from '../progress/types'
 import { useStudyStore, type StudyMode } from './studyStore'
 import type { RandomPool, SessionMinutes } from './sessionBuilder'
 import { buildAnswerLead, buildKeywordHint } from './cardHints'
+import { explainCard, hasCachedExplanation, isAiExplanationAvailable, type ExplanationMode } from './aiExplanation'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,6 +17,12 @@ const studyStore = useStudyStore()
 const progressStore = useProgressStore()
 const repository = new StaticCardRepository()
 const loading = ref(true)
+const aiLoading = ref(false)
+const aiError = ref('')
+const aiText = ref('')
+const aiMode = ref<ExplanationMode | null>(null)
+const aiCached = ref(false)
+const aiAvailable = ref(false)
 
 onMounted(async () => {
   const mode = (route.query.mode as StudyMode | undefined) ?? 'today'
@@ -34,6 +41,7 @@ onMounted(async () => {
     await studyStore.start(mode, String(route.query.topicId ?? 'javascript'), route.query.sectionId ? String(route.query.sectionId) : undefined)
   }
   loading.value = false
+  void isAiExplanationAvailable().then((available) => { aiAvailable.value = available })
 })
 
 const currentNumber = computed(() => Math.min(studyStore.currentIndex + 1, studyStore.cards.length))
@@ -43,6 +51,7 @@ const isNewCard = computed(() => studyStore.currentCard
   : false)
 const keywordHint = computed(() => studyStore.currentCard ? buildKeywordHint(studyStore.currentCard) : '')
 const answerLead = computed(() => studyStore.currentCard ? buildAnswerLead(studyStore.currentCard) : '')
+const showAiTools = computed(() => aiAvailable.value || Boolean(studyStore.currentCard && hasCachedExplanation(studyStore.currentCard.id)))
 const durationMinutes = computed(() => {
   if (!studyStore.startedAt) return 0
   return Math.max(1, Math.round((Date.now() - new Date(studyStore.startedAt).getTime()) / 60000))
@@ -63,6 +72,32 @@ const resultText = computed(() => studyStore.mistakeCardIds.length
   : 'Все ответы удалось вспомнить — отличный результат для одной сессии.')
 
 function rate(value: ReviewRating): void { studyStore.rate(value) }
+
+watch(() => studyStore.currentCard?.id, () => {
+  aiLoading.value = false
+  aiError.value = ''
+  aiText.value = ''
+  aiMode.value = null
+  aiCached.value = false
+})
+
+async function requestAiExplanation(mode: ExplanationMode): Promise<void> {
+  const card = studyStore.currentCard
+  if (!card || aiLoading.value) return
+  aiLoading.value = true
+  aiError.value = ''
+  aiText.value = ''
+  aiMode.value = mode
+  try {
+    const result = await explainCard(card, mode)
+    aiText.value = result.text
+    aiCached.value = result.cached
+  } catch (error) {
+    aiError.value = error instanceof Error ? error.message : 'Не удалось получить объяснение.'
+  } finally {
+    aiLoading.value = false
+  }
+}
 </script>
 
 <template>
@@ -126,6 +161,20 @@ function rate(value: ReviewRating): void { studyStore.rate(value) }
         <div v-if="studyStore.answerVisible" class="answer-block">
           <span class="answer-block__label">Ответ</span>
           <MarkdownContent :source="studyStore.currentCard.answer" />
+          <div v-if="showAiTools" class="ai-tools">
+            <div class="ai-tools__heading"><BrainCircuit :size="19" /><div><strong>Нужно другое объяснение?</strong><span>ИИ разберёт именно эту карточку.</span></div></div>
+            <div class="ai-tools__buttons">
+              <button :disabled="aiLoading" @click="requestAiExplanation('simple')"><Sparkles :size="16" />Объяснить проще</button>
+              <button :disabled="aiLoading" @click="requestAiExplanation('deep')"><BookOpenCheck :size="16" />Копнуть глубже</button>
+            </div>
+          </div>
+          <div v-if="aiLoading" class="ai-state" aria-live="polite"><span class="loader loader--small" /><span>{{ aiMode === 'deep' ? 'Готовим подробный разбор…' : 'Переводим на простой язык…' }}</span></div>
+          <div v-else-if="aiError" class="ai-error" aria-live="polite">{{ aiError }}<button @click="aiMode && requestAiExplanation(aiMode)">Повторить</button></div>
+          <section v-else-if="aiText" class="ai-answer">
+            <header><div><BrainCircuit :size="18" /><strong>{{ aiMode === 'deep' ? 'Подробный разбор' : 'Простое объяснение' }}</strong></div><span v-if="aiCached">сохранено</span></header>
+            <MarkdownContent :source="aiText" />
+            <small>Ответ создан ИИ и может содержать неточность. Текст карточки остаётся основным.</small>
+          </section>
         </div>
       </section>
 
@@ -172,6 +221,13 @@ function rate(value: ReviewRating): void { studyStore.rate(value) }
 .hint-block { display:flex; align-items:flex-start; gap:11px; margin:0 0 22px; padding:14px; border:1px solid color-mix(in srgb,#e5ad32 42%,var(--border-subtle)); border-radius:18px; background:color-mix(in srgb,#fff4cf 70%,var(--surface)); color:#9b6912; animation:answer-in 180ms ease; }
 .hint-block > div { display:flex; flex-direction:column; gap:4px; }.hint-block strong { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; }.hint-block span { color:var(--text); font-size:.88rem; line-height:1.45; }
 .answer-block__label { display:block; margin-bottom:12px; color:var(--primary); font-size:.72rem; font-weight:850; letter-spacing:.08em; text-transform:uppercase; }
+.ai-tools { margin-top:24px; padding-top:18px; border-top:1px solid var(--border-subtle); }
+.ai-tools__heading { display:flex; align-items:center; gap:10px; color:var(--primary); }.ai-tools__heading > div { display:flex; flex-direction:column; gap:2px; }.ai-tools__heading strong { color:var(--text); font-size:.84rem; }.ai-tools__heading span { color:var(--text-muted); font-size:.7rem; }
+.ai-tools__buttons { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }.ai-tools__buttons button { display:flex; min-height:44px; align-items:center; justify-content:center; gap:7px; padding:8px 11px; border:1px solid var(--border-subtle); border-radius:14px; background:var(--surface-muted); color:var(--text); font-size:.75rem; font-weight:800; cursor:pointer; }.ai-tools__buttons button:disabled { opacity:.55; cursor:wait; }
+.ai-state { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:12px; padding:16px; border-radius:16px; background:var(--surface-muted); color:var(--text-muted); font-size:.78rem; }.loader--small { width:22px; height:22px; border-width:3px; }
+.ai-error { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; padding:13px 14px; border-radius:16px; background:#fff0ef; color:#a8322b; font-size:.76rem; }.ai-error button { border:0; background:transparent; color:inherit; font-weight:800; cursor:pointer; }
+.ai-answer { margin-top:12px; padding:18px; border:1px solid color-mix(in srgb,var(--primary) 28%,var(--border-subtle)); border-radius:20px; background:color-mix(in srgb,var(--primary-soft) 38%,var(--surface)); }
+.ai-answer header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; color:var(--primary); }.ai-answer header > div { display:flex; align-items:center; gap:8px; }.ai-answer header strong { font-size:.82rem; }.ai-answer header > span { padding:4px 7px; border-radius:999px; background:var(--surface); color:var(--text-muted); font-size:.62rem; font-weight:800; text-transform:uppercase; }.ai-answer small { display:block; margin-top:14px; color:var(--text-muted); font-size:.66rem; line-height:1.45; }
 .study-actions,.rating-panel { padding:20px 4px 0; }
 .study-actions p,.rating-panel > p { margin:0 0 14px; color:var(--text-muted); font-size:.84rem; line-height:1.45; text-align:center; }
 .study-actions .primary-button { width:100%; }
@@ -200,4 +256,6 @@ function rate(value: ReviewRating): void { studyStore.rate(value) }
 .back-link--center { justify-content:center; margin-top:20px; }
 @keyframes answer-in { from { opacity:0; transform:translateY(8px); } }
 @media (prefers-color-scheme:dark) { .rating--again,.rating--hard,.rating--good,.rating--easy { background:var(--surface-muted); } }
+@media (prefers-color-scheme:dark) { .ai-error { background:var(--surface-muted); color:#ff9f98; } }
+@media (max-width:440px) { .ai-tools__buttons { grid-template-columns:1fr; } }
 </style>

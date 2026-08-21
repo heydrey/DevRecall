@@ -41,9 +41,20 @@ async function databaseStatus(): Promise<{ configured: boolean; ok: boolean; cod
   }
 }
 
+function aiStatus(): { configured: boolean; provider?: 'groq' | 'gemini'; model?: string } {
+  const requested = process.env.AI_PROVIDER?.trim().toLowerCase()
+  const groqConfigured = Boolean(process.env.GROQ_API_KEY?.trim())
+  const geminiConfigured = Boolean(process.env.GEMINI_API_KEY?.trim())
+  if (requested === 'groq' && groqConfigured) return { configured: true, provider: 'groq', model: process.env.GROQ_MODEL?.trim() || 'qwen/qwen3.6-27b' }
+  if (requested === 'gemini' && geminiConfigured) return { configured: true, provider: 'gemini', model: process.env.GEMINI_MODEL?.trim() || 'gemini-2.5-flash-lite' }
+  if (groqConfigured) return { configured: true, provider: 'groq', model: process.env.GROQ_MODEL?.trim() || 'qwen/qwen3.6-27b' }
+  if (geminiConfigured) return { configured: true, provider: 'gemini', model: process.env.GEMINI_MODEL?.trim() || 'gemini-2.5-flash-lite' }
+  return { configured: false }
+}
+
 export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
   if (!allowOnly(request, response, 'GET')) return
   const [telegram, database] = await Promise.all([telegramStatus(), databaseStatus()])
   const ok = telegram.ok && database.ok
-  response.status(ok ? 200 : 503).json({ status: ok ? 'ok' : 'degraded', telegram, database, time: new Date().toISOString() })
+  response.status(ok ? 200 : 503).json({ status: ok ? 'ok' : 'degraded', telegram, database, ai: aiStatus(), time: new Date().toISOString() })
 }
