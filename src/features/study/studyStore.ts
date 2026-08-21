@@ -5,15 +5,43 @@ import type { Card } from '../content/types'
 import { useProgressStore } from '../progress/progressStore'
 import type { ReviewRating } from '../progress/types'
 import {
-  buildFocusedSession,
   buildPlannedSession,
   buildRandomSession,
+  shuffleCards,
   type RandomSessionOptions,
 } from './sessionBuilder'
 
 export type StudyMode = 'today' | 'topic' | 'section' | 'favorites' | 'difficult' | 'random' | 'mistakes'
 
 const repository = new StaticCardRepository()
+const LAST_TOPIC_FIRST_CARD_KEY = 'devrecall:last-topic-first-card:v1'
+
+function shuffledTopicCards(source: Card[], scope: string): Card[] {
+  const shuffled = shuffleCards(source)
+  if (!shuffled.length) return shuffled
+
+  let previousByScope: Record<string, string> = {}
+  try {
+    previousByScope = JSON.parse(localStorage.getItem(LAST_TOPIC_FIRST_CARD_KEY) ?? '{}') as Record<string, string>
+  } catch {
+    previousByScope = {}
+  }
+
+  if (shuffled.length > 1 && shuffled[0]?.id === previousByScope[scope]) {
+    const replacementIndex = 1 + Math.floor(Math.random() * (shuffled.length - 1))
+    const first = shuffled[0] as Card
+    shuffled[0] = shuffled[replacementIndex] as Card
+    shuffled[replacementIndex] = first
+  }
+
+  previousByScope[scope] = shuffled[0]?.id ?? ''
+  try {
+    localStorage.setItem(LAST_TOPIC_FIRST_CARD_KEY, JSON.stringify(previousByScope))
+  } catch {
+    // Перемешивание продолжает работать, даже если локальное хранилище недоступно.
+  }
+  return shuffled
+}
 
 export const useStudyStore = defineStore('study', () => {
   const cards = ref<Card[]>([])
@@ -100,7 +128,9 @@ export const useStudyStore = defineStore('study', () => {
     } else if (nextMode === 'difficult') {
       resetSession('difficult', progressStore.difficultCards(source))
     } else {
-      resetSession(nextMode === 'section' ? 'section' : 'topic', buildFocusedSession(source, progressStore.progress))
+      const sessionMode = nextMode === 'section' ? 'section' : 'topic'
+      const scope = sessionMode === 'section' ? `${topicId}:${sectionId ?? 'all'}` : topicId
+      resetSession(sessionMode, shuffledTopicCards(source, scope))
     }
   }
 
