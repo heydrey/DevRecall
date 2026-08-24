@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { ArrowLeft, BookOpenCheck, BrainCircuit, Check, CircleCheck, CircleHelp, Lightbulb, RotateCcw, Sparkles, Star, X } from '@lucide/vue'
+import { ArrowLeft, BookOpenCheck, BrainCircuit, Check, CircleCheck, CircleHelp, History, Lightbulb, RotateCcw, Sparkles, Star, X } from '@lucide/vue'
 import { useRoute, useRouter } from 'vue-router'
 import MarkdownContent from '../../shared/markdown/MarkdownContent.vue'
 import { StaticCardRepository } from '../content/StaticCardRepository'
@@ -236,6 +236,7 @@ function closeQuiz(): void {
     <main v-else-if="studyStore.currentCard" class="study-content">
       <div v-if="progressStore.persistenceWarning" class="persistence-warning">{{ progressStore.persistenceWarning }}<button @click="progressStore.clearPersistenceWarning">×</button></div>
       <section class="question-card">
+        <div v-if="studyStore.mode === 'today-practice'" class="practice-note"><History :size="18" /><div><strong>Повторение сегодняшнего материала</strong><span>Ответы здесь не изменяют основной график повторений.</span></div></div>
         <div v-if="isNewCard" class="new-card-note">
           <Sparkles :size="18" />
           <div><strong>Новая карточка</strong><span>Её не нужно знать заранее — сейчас разберём.</span></div>
@@ -282,6 +283,13 @@ function closeQuiz(): void {
         <div class="learning-panel__message"><BookOpenCheck :size="21" /><div><strong>Теперь этот вопрос уже знаком</strong><span>Не знать до объяснения нормально. Следующая встреча закрепит ответ.</span></div></div>
         <button class="primary-button" @click="rate('again')">Понятно, повторим позже</button>
       </div>
+      <div v-else-if="studyStore.mode === 'today-practice'" class="rating-panel">
+        <p>Удалось вспомнить объяснение до просмотра?</p>
+        <div class="rating-grid practice-rating-grid">
+          <button class="rating-button rating--again" @click="rate('again')"><strong>Пока нет</strong><span>покажем ещё раз в этой сессии</span></button>
+          <button class="rating-button rating--good" @click="rate('good')"><strong>Да, вспомнил</strong><span>двигаемся дальше</span></button>
+        </div>
+      </div>
       <div v-else class="rating-panel">
         <p>Что вы помнили до просмотра ответа?</p>
         <div class="rating-grid">
@@ -307,6 +315,7 @@ function closeQuiz(): void {
 .persistence-warning button { border:0; background:transparent; color:inherit; font-size:1.2rem; cursor:pointer; }
 .question-card { min-width:0; max-width:100%; flex:1; padding:24px; border:1px solid var(--border-subtle); border-radius:30px; background:var(--surface); box-shadow:var(--shadow-md); }
 .new-card-note { display:flex; align-items:center; gap:10px; margin-bottom:22px; padding:12px 14px; border-radius:17px; background:var(--primary-soft); color:var(--primary); }
+.practice-note { display:flex; align-items:flex-start; gap:10px; margin-bottom:22px; padding:12px 14px; border-radius:17px; background:var(--primary-soft); color:var(--primary); }.practice-note > div { display:flex; flex-direction:column; gap:2px; }.practice-note strong { font-size:.76rem; }.practice-note span { color:var(--text-muted); font-size:.69rem; line-height:1.4; }
 .new-card-note > div { display:flex; flex-direction:column; gap:2px; }.new-card-note strong { font-size:.78rem; }.new-card-note span { color:var(--text-muted); font-size:.7rem; }
 .question-card__meta { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .question-card__meta span,.question-card__meta b { padding:7px 10px; border-radius:999px; background:var(--surface-muted); color:var(--text-muted); font-size:.68rem; font-weight:800; text-transform:uppercase; }

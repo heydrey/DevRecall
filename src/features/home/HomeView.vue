@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ArrowRight, BrainCircuit, Flame, Shuffle, Sparkles, UserRound } from '@lucide/vue'
+import { ArrowRight, BrainCircuit, Flame, History, Shuffle, Sparkles, UserRound } from '@lucide/vue'
 import { RouterLink } from 'vue-router'
 import { StaticCardRepository } from '../content/StaticCardRepository'
 import type { Card, Topic } from '../content/types'
@@ -17,13 +17,21 @@ onMounted(async () => {
 
 const dueCount = computed(() => cards.value.filter((card) => progressStore.isDue(card.id)).length)
 const newCount = computed(() => cards.value.filter((card) => !(progressStore.progress[card.id]?.repetitions ?? 0)).length)
-const plannedCount = computed(() => Math.min(dueCount.value, progressStore.settings.dailyReviewLimit) + Math.min(newCount.value, progressStore.settings.dailyNewCards))
+const plannedReviewCount = computed(() => Math.min(dueCount.value, progressStore.settings.dailyReviewLimit))
+const plannedNewCount = computed(() => Math.min(newCount.value, progressStore.settings.dailyNewCards))
+const plannedCount = computed(() => plannedReviewCount.value + plannedNewCount.value)
 const learnedCount = computed(() => Object.values(progressStore.progress).filter((item) => item.repetitions > 0).length)
 const todayCount = computed(() => {
   const today = new Date().toLocaleDateString('sv-SE')
   return progressStore.reviewEvents.filter(
     (event) => new Date(event.reviewedAt).toLocaleDateString('sv-SE') === today,
   ).length
+})
+const todayCardCount = computed(() => {
+  const today = new Date().toLocaleDateString('sv-SE')
+  return new Set(progressStore.reviewEvents
+    .filter((event) => new Date(event.reviewedAt).toLocaleDateString('sv-SE') === today)
+    .map((event) => event.cardId)).size
 })
 const streak = computed(() => {
   const days = new Set(
@@ -85,17 +93,23 @@ const cardWord = (count: number) => {
       <div class="study-hero__glow" />
       <div class="study-hero__icon"><Sparkles :size="22" /></div>
       <span class="study-hero__label">План на сегодня</span>
-      <h2>{{ plannedCount ? (dueCount ? `${dueCount} ${cardWord(dueCount)} к повторению` : 'Можно изучить новые карточки') : 'На сегодня всё готово' }}</h2>
-      <p>{{ plannedCount ? `В плане ${plannedCount} ${cardWord(plannedCount)}. Выберите удобный режим и сохраните темп.` : 'Можно закрепить знания в свободной случайной тренировке.' }}</p>
+      <h2>{{ plannedCount ? `${plannedCount} ${cardWord(plannedCount)} по плану` : 'На сегодня всё готово' }}</h2>
+      <p>{{ plannedCount ? `${plannedReviewCount} повторить · ${plannedNewCount} новых. Приложение само выберет правильный порядок.` : 'План выполнен. Можно закрепить знания в свободной тренировке.' }}</p>
       <div class="study-hero__actions">
         <RouterLink class="primary-button primary-button--light" to="/study?mode=today">
-          Повторить по плану <ArrowRight :size="19" />
+          Учиться по плану <ArrowRight :size="19" />
         </RouterLink>
         <RouterLink class="primary-button hero-random-button" to="/study/random">
-          <Shuffle :size="18" />Случайная тренировка
+          <Shuffle :size="18" />Свободная тренировка
         </RouterLink>
       </div>
     </section>
+
+    <RouterLink v-if="todayCardCount" class="today-practice" to="/study?mode=today-practice">
+      <div><History :size="21" /></div>
+      <p><strong>Повторить изученное сегодня</strong><span>{{ todayCardCount }} {{ cardWord(todayCardCount) }} · без изменения графика повторений</span></p>
+      <ArrowRight :size="19" />
+    </RouterLink>
 
     <section class="training-note">
       <div><BrainCircuit :size="22" /></div>
@@ -173,6 +187,7 @@ const cardWord = (count: number) => {
 .study-hero p { max-width:500px; margin:0 0 22px; line-height:1.55; opacity:.78; }
 .study-hero__actions { display:flex; flex-wrap:wrap; gap:10px; }
 .hero-random-button { border:1px solid rgb(255 255 255 / 24%); background:rgb(255 255 255 / 12%); box-shadow:none; color:white; }
+.today-practice { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:13px; padding:15px 17px; border:1px solid color-mix(in srgb,var(--primary) 28%,var(--border-subtle)); border-radius:22px; background:color-mix(in srgb,var(--primary-soft) 40%,var(--surface)); color:inherit; text-decoration:none; box-shadow:var(--shadow-sm); }.today-practice > div { display:grid; width:44px; height:44px; place-items:center; border-radius:15px; background:var(--primary-soft); color:var(--primary); }.today-practice p { display:flex; min-width:0; margin:0; flex-direction:column; gap:3px; }.today-practice strong { font-size:.86rem; }.today-practice span { color:var(--text-muted); font-size:.72rem; line-height:1.4; }.today-practice > svg { color:var(--text-muted); }
 .training-note { display:flex; align-items:center; gap:13px; padding:15px 17px; border:1px solid var(--border-subtle); border-radius:22px; background:var(--surface); box-shadow:var(--shadow-sm); }
 .training-note > div { display:grid; width:44px; height:44px; flex:none; place-items:center; border-radius:15px; background:var(--primary-soft); color:var(--primary); }
 .training-note p { display:flex; margin:0; flex-direction:column; gap:3px; }.training-note strong { font-size:.88rem; }.training-note span { color:var(--text-muted); font-size:.76rem; line-height:1.45; }

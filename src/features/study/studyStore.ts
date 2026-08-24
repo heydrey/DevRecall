@@ -11,7 +11,7 @@ import {
   type RandomSessionOptions,
 } from './sessionBuilder'
 
-export type StudyMode = 'today' | 'topic' | 'section' | 'favorites' | 'difficult' | 'random' | 'mistakes'
+export type StudyMode = 'today' | 'today-practice' | 'topic' | 'section' | 'favorites' | 'difficult' | 'random' | 'mistakes'
 
 const repository = new StaticCardRepository()
 const LAST_TOPIC_FIRST_CARD_KEY = 'devrecall:last-topic-first-card:v1'
@@ -114,6 +114,16 @@ export const useStudyStore = defineStore('study', () => {
       return
     }
 
+    if (nextMode === 'today-practice') {
+      const allCards = await repository.getCards()
+      const today = new Date().toLocaleDateString('sv-SE')
+      const reviewedTodayIds = new Set(progressStore.reviewEvents
+        .filter((event) => new Date(event.reviewedAt).toLocaleDateString('sv-SE') === today)
+        .map((event) => event.cardId))
+      resetSession('today-practice', shuffleCards(allCards.filter((card) => reviewedTodayIds.has(card.id))))
+      return
+    }
+
     const topicCards = nextMode === 'topic' || nextMode === 'section'
       ? await repository.getCardsByTopic(topicId)
       : null
@@ -182,7 +192,7 @@ export const useStudyStore = defineStore('study', () => {
     if (!card || !answerVisible.value) return
 
     const effectiveRating: ReviewRating = learningMode.value ? 'again' : rating
-    progressStore.recordReview(card.id, effectiveRating)
+    if (mode.value !== 'today-practice') progressStore.recordReview(card.id, effectiveRating)
     ratings.value = { ...ratings.value, [effectiveRating]: ratings.value[effectiveRating] + 1 }
 
     if (!answeredCardIds.value.includes(card.id)) answeredCardIds.value = [...answeredCardIds.value, card.id]
