@@ -4,6 +4,7 @@ import { ArrowLeft, Cloud, Download, RefreshCw, Settings, ShieldCheck, Upload, U
 import { fetchAdminOverview } from '../admin/adminClient'
 import { createBackup, downloadBackup, mergeOutbox, parseBackupFile } from '../backup/backupService'
 import { useProgressStore } from '../progress/progressStore'
+import { calculateCurrentStreak } from '../statistics/calculateStreak'
 import { LocalOutboxRepository } from '../sync/LocalOutboxRepository'
 import { useSyncStore } from '../sync/syncStore'
 import { useProfileStore } from './profileStore'
@@ -31,13 +32,7 @@ onMounted(async () => {
 const learned = computed(() => Object.values(progressStore.progress).filter((item) => item.repetitions > 0).length)
 const favorites = computed(() => Object.values(progressStore.progress).filter((item) => item.favorite).length)
 const initials = computed(() => profileStore.user?.displayName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() ?? 'DR')
-const streak = computed(() => {
-  const days = new Set(progressStore.reviewEvents.map((event) => new Date(event.reviewedAt).toLocaleDateString('sv-SE')))
-  let count = 0
-  const cursor = new Date()
-  while (days.has(cursor.toLocaleDateString('sv-SE'))) { count += 1; cursor.setDate(cursor.getDate() - 1) }
-  return count
-})
+const streak = computed(() => calculateCurrentStreak(progressStore.reviewEvents))
 
 const statusLabel = computed(() => ({
   local: 'Только на устройстве',

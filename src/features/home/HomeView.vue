@@ -5,6 +5,7 @@ import { RouterLink } from 'vue-router'
 import { StaticCardRepository } from '../content/StaticCardRepository'
 import type { Card, Topic } from '../content/types'
 import { useProgressStore } from '../progress/progressStore'
+import { calculateCurrentStreak } from '../statistics/calculateStreak'
 
 const repository = new StaticCardRepository()
 const progressStore = useProgressStore()
@@ -33,18 +34,7 @@ const todayCardCount = computed(() => {
     .filter((event) => new Date(event.reviewedAt).toLocaleDateString('sv-SE') === today)
     .map((event) => event.cardId)).size
 })
-const streak = computed(() => {
-  const days = new Set(
-    progressStore.reviewEvents.map((event) => new Date(event.reviewedAt).toLocaleDateString('sv-SE')),
-  )
-  let count = 0
-  const cursor = new Date()
-  while (days.has(cursor.toLocaleDateString('sv-SE'))) {
-    count += 1
-    cursor.setDate(cursor.getDate() - 1)
-  }
-  return count
-})
+const streak = computed(() => calculateCurrentStreak(progressStore.reviewEvents))
 const progressPercent = computed(() =>
   cards.value.length ? Math.round((learnedCount.value / cards.value.length) * 100) : 0,
 )
