@@ -62,6 +62,8 @@ export const useStudyStore = defineStore('study', () => {
   const learnedNewCardIds = ref<string[]>([])
   const currentStreak = ref(0)
   const bestStreak = ref(0)
+  const assistedCount = ref(0)
+  const retryCount = ref(0)
   const lastTopicId = ref('javascript')
   const lastSectionId = ref<string | undefined>()
 
@@ -96,6 +98,8 @@ export const useStudyStore = defineStore('study', () => {
     learnedNewCardIds.value = []
     currentStreak.value = 0
     bestStreak.value = 0
+    assistedCount.value = 0
+    retryCount.value = 0
   }
 
   async function start(nextMode: StudyMode, topicId = 'javascript', sectionId?: string): Promise<void> {
@@ -191,7 +195,11 @@ export const useStudyStore = defineStore('study', () => {
     const card = currentCard.value
     if (!card || !answerVisible.value) return
 
-    const effectiveRating: ReviewRating = learningMode.value ? 'again' : rating
+    // FSRS Hard означает успешное, но трудное самостоятельное вспоминание.
+    // Ответ после любой подсказки/разбора нельзя отправлять как Good/Easy/Hard.
+    const assisted = learningMode.value || hintStage.value > 0
+    const effectiveRating: ReviewRating = assisted ? 'again' : rating
+    if (assisted) assistedCount.value += 1
     if (mode.value !== 'today-practice') progressStore.recordReview(card.id, effectiveRating)
     ratings.value = { ...ratings.value, [effectiveRating]: ratings.value[effectiveRating] + 1 }
 
@@ -228,6 +236,13 @@ export const useStudyStore = defineStore('study', () => {
     if (card) useProgressStore().toggleFavorite(card.id)
   }
 
+  function finishSession(): void {
+    // Незавершённая карточка не получает фиктивной оценки.
+    finished.value = true
+  }
+
+  function recordRetry(): void { retryCount.value += 1 }
+
   return {
     cards,
     currentIndex,
@@ -248,6 +263,8 @@ export const useStudyStore = defineStore('study', () => {
     learnedNewCardIds,
     currentStreak,
     bestStreak,
+    assistedCount,
+    retryCount,
     completedCount,
     completedUniqueCount,
     newCardsLearnedCount,
@@ -262,5 +279,7 @@ export const useStudyStore = defineStore('study', () => {
     startLearning,
     rate,
     toggleFavorite,
+    finishSession,
+    recordRetry,
   }
 })
