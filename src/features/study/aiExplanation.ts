@@ -74,13 +74,29 @@ export async function explainCard(card: Card, mode: ExplanationMode): Promise<Ai
     }
     return cached
   }
-  if (!navigator.onLine) throw new Error('Для нового объяснения нужен интернет. Ранее открытые объяснения доступны офлайн.')
+  const result = await requestExplanation(card, mode)
+  saveCache(card, mode, result)
+  return result
+}
+
+export async function askCardQuestion(card: Card, question: string, signal?: AbortSignal): Promise<AiExplanation> {
+  const trimmed = question.trim()
+  if (!trimmed || question.length > 1_000) throw new Error('Напишите вопрос длиной от 1 до 1000 символов.')
+  // Уточнения не читают и не перезаписывают кэш двух основных объяснений.
+  return requestExplanation(card, 'simple', trimmed, signal)
+}
+
+async function requestExplanation(card: Card, mode: ExplanationMode, followUpQuestion?: string, signal?: AbortSignal): Promise<AiExplanation> {
+  if (!navigator.onLine) throw new Error('Для нового ответа ИИ нужен интернет. Ваш вопрос можно отправить после подключения.')
 
   const initData = getTelegramWebApp()?.initData
   if (!initData) throw new Error('ИИ-наставник доступен внутри Telegram.')
 
   const baseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') ?? ''
   const controller = new AbortController()
+  const abort = () => controller.abort()
+  if (signal?.aborted) controller.abort()
+  else signal?.addEventListener('abort', abort, { once: true })
   const timeout = window.setTimeout(() => controller.abort(), 30_000)
   try {
     const response = await globalThis.fetch(`${baseUrl}/api/explain`, {
@@ -92,6 +108,7 @@ export async function explainCard(card: Card, mode: ExplanationMode): Promise<Ai
         question: card.question,
         answer: card.answer,
         mode,
+        ...(followUpQuestion ? { followUpQuestion } : {}),
       }),
       signal: controller.signal,
     })
@@ -103,12 +120,12 @@ export async function explainCard(card: Card, mode: ExplanationMode): Promise<Ai
       model: body.model ?? '',
       cached: false,
     }
-    saveCache(card, mode, result)
     return result
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') throw new Error('ИИ отвечает слишком долго. Попробуйте ещё раз.')
     throw error
   } finally {
     window.clearTimeout(timeout)
+    signal?.removeEventListener('abort', abort)
   }
 }

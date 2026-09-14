@@ -11,6 +11,7 @@ import type { RandomPool, SessionMinutes } from './sessionBuilder'
 import { buildAnswerLead, buildKeywordHint } from './cardHints'
 import { explainCard, type ExplanationMode } from './aiExplanation'
 import { buildSessionQuiz, type QuizQuestion } from './quizBuilder'
+import CardQuestion from './CardQuestion.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -263,6 +264,7 @@ function closeQuiz(): void {
               <button :disabled="aiLoading" @click="requestAiExplanation('deep')"><BookOpenCheck :size="17" /><span><strong>Копнуть глубже</strong><small>Для собеседования: механизм и нюансы</small></span></button>
             </div>
           </div>
+          <CardQuestion :key="`${studyStore.currentIndex}:${studyStore.currentCard.id}`" :card="studyStore.currentCard" />
           <div v-if="aiLoading" class="ai-state" aria-live="polite"><span class="loader loader--small" /><span>{{ aiMode === 'deep' ? 'Готовим подробный разбор…' : 'Переводим на простой язык…' }}</span></div>
           <div v-else-if="aiError" class="ai-error" aria-live="polite">{{ aiError }}<button @click="aiMode && requestAiExplanation(aiMode)">Повторить</button></div>
           <section v-else-if="aiText" class="ai-answer">
