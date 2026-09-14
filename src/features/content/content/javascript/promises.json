@@ -53,8 +53,8 @@
     "id": "js-promises-006",
     "topicId": "javascript",
     "sectionId": "promises",
-    "question": "Чем `Promise.any` отличается от `Promise.race`?",
-    "answer": "`race` завершается по первому settled Promise — успешному или ошибочному. `any` ждёт первый **успешный** результат и игнорирует отдельные ошибки; если отклонятся все участники, он вернёт `AggregateError`.\n\n**Простой пример:**\n```js\nconst data = await Promise.any([\n  fetch('/server-1'),\n  fetch('/server-2')\n])\n```\nЕсли первый сервер упадёт, `any` всё ещё сможет вернуть успешный ответ второго.",
+    "question": "Чем Promise.any отличается от Promise.race и что считать успешным ответом fetch?",
+    "answer": "Promise.race принимает результат первого завершившегося участника — успешный или ошибочный. Promise.any ждёт первого успешно выполненного Promise; если отклонятся все, результатом станет ошибка AggregateError. Ни один из методов сам не отменяет оставшиеся операции.\n\n**Простой пример:**\n~~~js\nasync function loadJson(url) {\n  const response = await fetch(url)\n  if (!response.ok) throw new Error('HTTP ' + response.status)\n  return response.json()\n}\n\nasync function loadFromMirrors() {\n  return Promise.any([\n    loadJson('/mirror-1/data'),\n    loadJson('/mirror-2/data')\n  ])\n}\n~~~\n\n**Важный нюанс:** fetch не отклоняет Promise только из-за HTTP 404 или 500. Без проверки response.ok ответ с ошибкой тоже выиграл бы в Promise.any. Вызывающий код должен обработать случай, когда оба сервера недоступны.",
     "level": "middle",
     "tags": ["promise-any", "promise-race"],
     "enabled": true
@@ -63,8 +63,8 @@
     "id": "js-promises-007",
     "topicId": "javascript",
     "sectionId": "promises",
-    "question": "Почему последовательные `await` могут быть медленнее `Promise.all`?",
-    "answer": "При последовательных `await` вторая независимая операция начинается только после завершения первой. Если операции не зависят друг от друга, их можно запустить одновременно и затем ожидать через `Promise.all`. Это сокращает общее время примерно до длительности самой медленной операции, а не суммы всех длительностей.\n\n**Простой пример:**\n```js\nconst [user, posts] = await Promise.all([\n  loadUser(),\n  loadPosts()\n])\n```\nПользователь и посты загружаются одновременно, потому что одна операция не ждёт другую.",
+    "question": "Когда последовательные await замедляют загрузку, а когда нужны?",
+    "answer": "Если вызвать вторую операцию только после await первой, они выполняются последовательно. Для независимых операций ожидание можно совместить: сначала начать обе, затем дождаться результата. Это конкурентное ожидание, а не автоматический запуск JavaScript в разных потоках.\n\n**Простой пример:**\n~~~js\nasync function loadPage() {\n  const [user, news] = await Promise.all([\n    loadUser(),\n    loadNews()\n  ])\n  return { user, news }\n}\n~~~\nЗдесь предполагается, что loadUser и loadNews — независимые функции загрузки. Если каждая занимает около секунды, вместе ожидание будет примерно секунду вместо двух.\n\n**Важный нюанс:** два последовательных await над уже запущенными Promise не означают, что операции стартуют последовательно. А если второй запрос требует id из первого, зависимость реальна и ожидать нужно по порядку.",
     "level": "middle",
     "tags": ["async-await", "promise-all", "performance"],
     "enabled": true

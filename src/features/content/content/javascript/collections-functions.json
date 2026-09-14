@@ -3,8 +3,8 @@
     "id": "js-collections-functions-001",
     "topicId": "javascript",
     "sectionId": "collections-functions",
-    "question": "Какие типы данных есть в JavaScript?",
-    "answer": "В JavaScript есть примитивы: string, number, bigint, boolean, undefined, symbol и null. Все остальные значения относятся к объектам: обычные объекты, массивы, функции, даты и так далее. Примитив представляет само значение, а объект хранится и передаётся по ссылке.\n\n**Простой пример:**\n~~~js\nconst name = 'Анна'       // string\nconst age = 25            // number\nconst active = true       // boolean\nconst user = { name }     // object\nconst skills = ['JS']     // object, хотя это массив\n\nconsole.log(typeof name)  // 'string'\nconsole.log(typeof user)  // 'object'\n~~~\nОсобенность языка: typeof null возвращает 'object'. Это старое историческое поведение, а не признак того, что null действительно объект.",
+    "question": "Какие типы данных есть в JavaScript и как их различать?",
+    "answer": "В JavaScript восемь типов: семь примитивных — string, number, bigint, boolean, undefined, symbol, null — и object. Примитив хранит простое неизменяемое значение. Массивы, функции, даты и обычные объекты относятся к объектам.\n\n**Простой пример:**\n~~~js\ntypeof 'Анна'        // 'string'\ntypeof 25            // 'number'\ntypeof 25n           // 'bigint'\ntypeof true          // 'boolean'\ntypeof undefined     // 'undefined'\ntypeof Symbol('id')  // 'symbol'\ntypeof {}            // 'object'\ntypeof null          // 'object' — историческая особенность\ntypeof (() => {})    // 'function' — вызываемый объект\nArray.isArray([])    // true\n~~~\n\n**Важный нюанс:** аргументы всегда передаются по значению. Для объекта копируется ссылка на тот же объект: изменение его свойств видно снаружи, но присваивание параметру нового объекта не заменит переменную вызывающего кода. Это не передача самой переменной по ссылке.",
     "level": "basic",
     "tags": ["types", "primitives", "objects"],
     "enabled": true
@@ -43,8 +43,8 @@
     "id": "js-collections-functions-005",
     "topicId": "javascript",
     "sectionId": "collections-functions",
-    "question": "Когда нужен Set и чем он отличается от массива?",
-    "answer": "Set — коллекция уникальных значений. Одно и то же значение нельзя добавить в неё дважды. У Set нет доступа по числовому индексу, зато удобно быстро проверять наличие через has. Массив лучше, когда важны порядок, индексы и методы вроде map.\n\n**Простой пример:**\n~~~js\nconst names = ['Аня', 'Борис', 'Аня']\nconst uniqueNames = [...new Set(names)]\n\nconsole.log(uniqueNames) // ['Аня', 'Борис']\n~~~\nЧастый сценарий — убрать повторяющиеся примитивные значения из массива.",
+    "question": "Когда использовать Set вместо массива и как он определяет уникальность?",
+    "answer": "Set хранит уникальные значения в порядке их добавления. Массив тоже сохраняет порядок, но допускает повторы и обращение по индексу. У Set для работы есть add, has, delete и size; индекса вроде items[0] нет.\n\n**Простой пример:**\n~~~js\nconst skills = new Set(['JS', 'Vue', 'JS'])\nskills.has('JS') // true\nskills.size     // 2\nconst uniqueSkills = [...skills] // ['JS', 'Vue']\n~~~\n\n**Важный нюанс:** объекты сравниваются по идентичности, а не по полям. new Set([{ id: 1 }, { id: 1 }]).size равно 2. Для удаления дубликатов по id нужен Map или отдельная проверка поля. NaN считается равным NaN, а +0 и -0 — одним значением.",
     "level": "basic",
     "tags": ["set", "array", "collections"],
     "enabled": true
@@ -63,8 +63,8 @@
     "id": "js-collections-functions-007",
     "topicId": "javascript",
     "sectionId": "collections-functions",
-    "question": "Как сделать глубокую копию объекта?",
-    "answer": "Для современных данных обычно используют structuredClone: он копирует вложенные объекты, массивы, Map, Set и многие другие встроенные типы. Способ через JSON ограничен: он теряет undefined, функции и информацию о некоторых типах, а циклические ссылки вызывают ошибку.\n\n**Простой пример:**\n~~~js\nconst user = {\n  name: 'Лена',\n  address: { city: 'Москва' }\n}\n\nconst copy = structuredClone(user)\ncopy.address.city = 'Казань'\n\nconsole.log(user.address.city) // 'Москва'\n~~~\nДля экземпляров собственных классов или специальных правил копирования иногда нужна отдельная функция.",
+    "question": "Как сделать глубокую копию объекта и какие ограничения есть у structuredClone?",
+    "answer": "Глубокая копия создаёт независимые копии вложенных данных. Для поддерживаемых значений подходит structuredClone: он копирует обычные объекты, массивы, Date, Map и Set, умеет сохранять циклические связи.\n\n**Простой пример:**\n~~~js\nconst user = { address: { city: 'Москва' } }\nconst copy = structuredClone(user)\ncopy.address.city = 'Казань'\nconsole.log(user.address.city) // 'Москва'\n~~~\n\n**Ограничения:** функции, DOM-элементы и Proxy таким способом не клонируются — можно получить DataCloneError. Прототип пользовательского класса и его методы не сохраняются как у исходного экземпляра. Для таких объектов нужны явные правила копирования.\n\nJSON.parse(JSON.stringify(value)) не универсальная замена: Date становится строкой, часть значений теряется, циклы вызывают ошибку. Spread создаёт только поверхностную копию.",
     "level": "middle",
     "tags": ["copy", "structuredClone", "objects"],
     "enabled": true

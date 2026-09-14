@@ -58,7 +58,7 @@ const isNewCard = computed(() => studyStore.currentCard
   : false)
 const keywordHint = computed(() => studyStore.currentCard ? buildKeywordHint(studyStore.currentCard) : '')
 const answerLead = computed(() => studyStore.currentCard ? buildAnswerLead(studyStore.currentCard) : '')
-const showAiTools = computed(() => aiAvailable.value || Boolean(studyStore.currentCard && hasCachedExplanation(studyStore.currentCard.id)))
+const showAiTools = computed(() => aiAvailable.value || Boolean(studyStore.currentCard && hasCachedExplanation(studyStore.currentCard)))
 const durationMinutes = computed(() => {
   if (!studyStore.startedAt) return 0
   return Math.max(1, Math.round((Date.now() - new Date(studyStore.startedAt).getTime()) / 60000))

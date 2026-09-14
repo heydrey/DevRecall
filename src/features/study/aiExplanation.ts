@@ -16,18 +16,19 @@ function cacheKey(cardId: string, mode: ExplanationMode): string {
   return `${CACHE_PREFIX}${cardId}:${mode}`
 }
 
-function readCache(cardId: string, mode: ExplanationMode): AiExplanation | null {
+function readCache(card: Card, mode: ExplanationMode): AiExplanation | null {
   try {
-    const value = JSON.parse(localStorage.getItem(cacheKey(cardId, mode)) ?? '') as Partial<AiExplanation>
+    const value = JSON.parse(localStorage.getItem(cacheKey(card.id, mode)) ?? '') as Partial<AiExplanation> & { sourceQuestion?: string; sourceAnswer?: string }
     if (typeof value.text !== 'string' || !value.text.trim()) return null
+    if (value.sourceQuestion !== card.question || value.sourceAnswer !== card.answer) return null
     return { text: value.text, provider: value.provider ?? 'ai', model: value.model ?? '', cached: true }
   } catch {
     return null
   }
 }
 
-export function hasCachedExplanation(cardId: string): boolean {
-  return Boolean(readCache(cardId, 'simple') || readCache(cardId, 'deep'))
+export function hasCachedExplanation(card: Card): boolean {
+  return Boolean(readCache(card, 'simple') || readCache(card, 'deep'))
 }
 
 export async function isAiExplanationAvailable(): Promise<boolean> {
@@ -42,16 +43,21 @@ export async function isAiExplanationAvailable(): Promise<boolean> {
   }
 }
 
-function saveCache(cardId: string, mode: ExplanationMode, value: AiExplanation): void {
+function saveCache(card: Card, mode: ExplanationMode, value: AiExplanation): void {
   try {
-    localStorage.setItem(cacheKey(cardId, mode), JSON.stringify({ ...value, cached: false }))
+    localStorage.setItem(cacheKey(card.id, mode), JSON.stringify({
+      ...value,
+      cached: false,
+      sourceQuestion: card.question,
+      sourceAnswer: card.answer,
+    }))
   } catch {
     // Объяснение продолжит работать в текущей сессии, даже если хранилище переполнено.
   }
 }
 
 export async function explainCard(card: Card, mode: ExplanationMode): Promise<AiExplanation> {
-  const cached = readCache(card.id, mode)
+  const cached = readCache(card, mode)
   if (cached) {
     const initData = getTelegramWebApp()?.initData
     if (initData && navigator.onLine) {
@@ -97,7 +103,7 @@ export async function explainCard(card: Card, mode: ExplanationMode): Promise<Ai
       model: body.model ?? '',
       cached: false,
     }
-    saveCache(card.id, mode, result)
+    saveCache(card, mode, result)
     return result
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') throw new Error('ИИ отвечает слишком долго. Попробуйте ещё раз.')

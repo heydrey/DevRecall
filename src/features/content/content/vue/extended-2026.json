@@ -23,8 +23,8 @@
     "id": "vue-extended-003",
     "topicId": "vue",
     "sectionId": "vue-components",
-    "question": "Как сделать собственный v-model у компонента?",
-    "answer": "v-model передаёт значение через prop и получает изменение через событие. В современном Vue это удобно объявлять defineModel, а без него — prop modelValue и emit update:modelValue. Можно иметь несколько моделей с именами, например v-model:title.\n\n**Простой пример:** компонент PriceInput получает modelValue и при вводе отправляет emit('update:modelValue', новоеЗначение). Родитель использует <PriceInput v-model=\"price\" />.\n\n**Что важно сказать на собеседовании:** дочерний компонент не меняет prop напрямую, а сообщает новое значение событием.",
+    "question": "Как сделать собственный v-model в компоненте Vue 3?",
+    "answer": "Начиная с Vue 3.4, удобно использовать defineModel в script setup. Он создаёт связанную с родителем модель: чтение получает значение родителя, изменение отправляет событие обновления.\n\n**Простой пример — NameInput.vue:**\n~~~vue\n<script setup>\nconst model = defineModel({ type: String, required: true })\n</script>\n<template>\n  <input v-model=\"model\">\n</template>\n~~~\nВ родителе с name = ref('Анна') используется <NameInput v-model=\"name\" />.\n\n**Под капотом:** обычная модель соответствует prop modelValue и событию update:modelValue. Ручная реализация через defineProps и defineEmits остаётся рабочей, в том числе для Vue до 3.4. Именованная модель defineModel('title') используется как v-model:title.\n\n**Важный нюанс:** default только у дочерней модели может дать рассинхронизацию, если значение родителя undefined. Начальное значение лучше согласовать с родителем.",
     "level": "basic",
     "tags": ["2026", "v-model", "defineModel"],
     "enabled": true
@@ -43,8 +43,8 @@
     "id": "vue-extended-005",
     "topicId": "vue",
     "sectionId": "vue-reactivity",
-    "question": "Почему при деструктуризации reactive можно потерять реактивность и как помогают toRef и toRefs?",
-    "answer": "reactive отслеживает доступ к свойствам через Proxy. Если скопировать примитивное свойство обычной деструктуризацией, получится отдельное значение без связи с Proxy. toRef создаёт ref для одного свойства, а toRefs — набор связанных ref для всех свойств объекта.\n\n**Простой пример:** const { count } = reactive({ count: 0 }) не обновит локальный count. const { count } = toRefs(state) сохранит связь, и значение читается как count.value.\n\n**Что важно сказать на собеседовании:** объект reactive можно деструктурировать безопасно только с учётом сохранения ссылок на реактивные свойства.",
+    "question": "Почему деструктуризация reactive теряет связь с примитивом и чем отличаются props в Vue 3.5+?",
+    "answer": "Если извлечь число из reactive обычной деструктуризацией, получится текущее число, а не связанное реактивное поле. toRef и toRefs создают ref, который продолжает читать и записывать исходное свойство.\n\n**Простой пример:**\n~~~js\nimport { reactive, toRefs } from 'vue'\nconst state = reactive({ count: 0 })\nconst { count: snapshot } = state\nconst { count } = toRefs(state)\nstate.count++\nconsole.log(snapshot)    // 0\nconsole.log(count.value) // 1\n~~~\n\n**Важный нюанс версии:** в Vue 3.5+ деструктуризация непосредственно из defineProps внутри того же script setup поддерживается компилятором и остаётся реактивной. Это специальное преобразование, а не новое правило для всех объектов. Для watch деструктурированного prop передают getter: watch(() => count, callback). У Pinia есть отдельный storeToRefs.",
     "level": "middle",
     "tags": ["2026", "reactive", "toRefs"],
     "enabled": true
@@ -63,8 +63,8 @@
     "id": "vue-extended-007",
     "topicId": "vue",
     "sectionId": "vue-reactivity",
-    "question": "Как правильно очищать побочные эффекты внутри watch?",
-    "answer": "Каждый запуск watch может создать запрос, таймер или подписку, которые устареют при следующем изменении. Через функцию очистки watch регистрируют отмену предыдущего эффекта. Она вызывается перед новым запуском и при остановке watcher.\n\n**Простой пример:** при изменении поисковой строки создаётся AbortController. В cleanup вызывается abort(), поэтому медленный старый запрос не перезапишет свежий результат.\n\n**Что важно сказать на собеседовании:** watcher должен владеть жизненным циклом созданного эффекта и отменять устаревшую работу.",
+    "question": "Как отменить устаревший запрос внутри watch?",
+    "answer": "watch передаёт callback третьим аргументом функцию onCleanup. В ней регистрируют очистку: она выполняется перед следующим запуском callback или при остановке watcher. Так старый запрос не продолжает работать после смены параметра.\n\n**Простой пример:**\n~~~js\nwatch(userId, async (id, _old, onCleanup) => {\n  const controller = new AbortController()\n  onCleanup(() => controller.abort())\n  try {\n    const response = await fetch('/api/users/' + id, {\n      signal: controller.signal\n    })\n    if (!response.ok) throw new Error('HTTP ' + response.status)\n    const data = await response.json()\n    if (!controller.signal.aborted) user.value = data\n  } catch (error) {\n    if (!controller.signal.aborted) console.error(error)\n  }\n})\n~~~\nЗдесь userId и user — ref, а watch импортирован из vue.\n\n**Нюанс версии:** в Vue 3.5+ есть onWatcherCleanup. Его нужно вызывать синхронно, до await. Watcher, созданный синхронно в setup, останавливается при unmount; созданному позже может потребоваться явный stop.",
     "level": "middle",
     "tags": ["2026", "watch", "cleanup"],
     "enabled": true
@@ -93,8 +93,8 @@
     "id": "vue-extended-010",
     "topicId": "vue",
     "sectionId": "vue-rendering",
-    "question": "Для чего нужен Suspense во Vue?",
-    "answer": "Suspense координирует отображение компонентов, которые ожидают асинхронную работу во время setup. Он показывает fallback, пока зависимости не готовы, а затем основное содержимое. Ошибки при этом всё равно нужно обрабатывать отдельно.\n\n**Простой пример:** профиль загружает данные в async setup, а Suspense временно показывает скелетон вместо пустого блока.\n\n**Что важно сказать на собеседовании:** Suspense улучшает UX ожидания, но не заменяет обработку ошибок, отмену запросов и продуманную загрузку данных.",
+    "question": "Что делает Suspense во Vue 3 и какие у него ограничения?",
+    "answer": "Suspense показывает запасное содержимое, пока его асинхронные зависимости готовятся. Он работает с async setup, включая top-level await в script setup, и поддерживаемыми асинхронными компонентами.\n\n**Простой пример — шаблон родителя:**\n~~~vue\n<Suspense>\n  <AsyncProfile />\n  <template #fallback>\n    <p>Загружаем профиль…</p>\n  </template>\n</Suspense>\n~~~\nAsyncProfile должен действительно иметь асинхронную зависимость setup. Обычный fetch в onMounted сам по себе не заставляет Suspense ждать.\n\n**Важный нюанс:** в официальной документации Vue Suspense помечен как экспериментальная возможность. Он не обрабатывает ошибки вместо приложения; для них используют, например, onErrorCaptured у родителя. Он также не заменяет отмену запросов и отдельное состояние последующих загрузок.",
     "level": "middle",
     "tags": ["2026", "suspense", "async"],
     "enabled": true

@@ -3,8 +3,8 @@
     "id": "vue-components-001",
     "topicId": "vue",
     "sectionId": "vue-components",
-    "question": "Как передавать данные от родительского компонента к дочернему и обратно?",
-    "answer": "Родитель передаёт данные вниз через props. Дочерний компонент не должен менять prop напрямую: когда нужно сообщить об изменении, он отправляет событие через emit, а родитель обновляет своё состояние. Получается однонаправленный поток данных, который легче понимать и отлаживать.\n\n**Простой пример:**\n~~~vue\n<!-- Parent.vue -->\n<UserCard :name=\"userName\" @rename=\"userName = $event\" />\n\n<!-- UserCard.vue -->\n<script setup>\ndefineProps({ name: String })\nconst emit = defineEmits(['rename'])\n</script>\n<button @click=\"emit('rename', 'Анна')\">Сменить имя</button>\n~~~",
+    "question": "Как передавать данные между родителем и дочерним компонентом во Vue?",
+    "answer": "Родитель передаёт значения через props. Ребёнок сообщает о желаемом изменении событием emit, а родитель меняет состояние. Так видно, кто владеет данными.\n\n**Простой пример — UserCard.vue:**\n~~~vue\n<script setup>\ndefineProps({ name: String })\nconst emit = defineEmits(['rename'])\n</script>\n<template>\n  <p>{{ name }}</p>\n  <button @click=\"emit('rename', 'Анна')\">Сменить имя</button>\n</template>\n~~~\nВ шаблоне родителя с userName = ref('Ира'):\n~~~vue\n<UserCard :name=\"userName\" @rename=\"userName = $event\" />\n~~~\n\n**Важный нюанс:** prop доступен только для чтения на верхнем уровне. Вложенный объект технически можно изменить через общую ссылку, но обычно это нарушает понятный поток данных. События компонентов не всплывают автоматически через всех предков.",
     "level": "basic",
     "tags": ["props", "emit", "components"],
     "enabled": true
@@ -34,7 +34,7 @@
     "topicId": "vue",
     "sectionId": "vue-reactivity",
     "question": "Чем Options API отличается от Composition API?",
-    "answer": "В Options API код разделён по типам: data, methods, computed, watch. В Composition API код группируют по логике задачи внутри setup: состояние, вычисления и функции одной возможности находятся рядом. Оба подхода реактивны и поддерживаются Vue 3. Composition API удобнее для переиспользования логики и больших компонентов, но не делает Options API неправильным.\n\n**Простой пример:**\n~~~js\n<script setup>\nimport { ref, computed } from 'vue'\n\nconst count = ref(0)\nconst doubled = computed(() => count.value * 2)\nconst increment = () => count.value++\n</script>\n~~~",
+    "answer": "В Options API код разделён по типам: data, methods, computed, watch. В Composition API код группируют по логике задачи внутри setup: состояние, вычисления и функции одной возможности находятся рядом. Оба подхода реактивны и поддерживаются Vue 3. Composition API удобнее для переиспользования логики и больших компонентов, но не делает Options API неправильным.\n\n**Простой пример:**\n~~~vue\n<script setup>\nimport { ref, computed } from 'vue'\n\nconst count = ref(0)\nconst doubled = computed(() => count.value * 2)\nconst increment = () => count.value++\n</script>\n~~~",
     "level": "basic",
     "tags": ["options-api", "composition-api"],
     "enabled": true
@@ -53,8 +53,8 @@
     "id": "vue-reactivity-003",
     "topicId": "vue",
     "sectionId": "vue-reactivity",
-    "question": "Что делает deep watch и почему с ним нужно быть осторожным?",
-    "answer": "Обычный watch объекта реагирует на замену ссылки, но не всегда на изменение глубоко вложенного поля. Опция deep заставляет Vue обходить вложенную структуру и отслеживать изменения внутри неё. Для большого объекта такой обход может быть дорогим, а причина срабатывания — неочевидной. Часто лучше наблюдать конкретное поле.\n\n**Простой пример:**\n~~~js\nconst user = reactive({ address: { city: 'Москва' } })\n\nwatch(\n  () => user.address.city,\n  city => console.log('Новый город:', city),\n)\n~~~\nЗдесь deep не нужен, потому что зависимость указана точно.",
+    "question": "Когда watch наблюдает вложенные изменения и зачем нужен deep?",
+    "answer": "Поведение зависит от того, что передали в watch. watch(user, callback), где user создан через reactive, по умолчанию следит и за вложенными изменениями. watch(() => user.address, callback) следит за заменой address; для изменений его полей требуется deep или точный источник.\n\n**Простой пример:**\n~~~js\nconst user = reactive({ address: { city: 'Москва' } })\nwatch(\n  () => user.address.city,\n  city => console.log('Новый город:', city)\n)\nuser.address.city = 'Казань'\n~~~\nЗдесь наблюдаем конкретную строку, поэтому deep не нужен. ref, reactive и watch импортируются из vue.\n\n**Важный нюанс:** глубокий обход больших объектов может быть дорогим. При вложенной мутации oldValue и newValue глубокого watcher могут быть одним объектом, а не снимками до и после. В Vue 3.5+ deep также принимает максимальную глубину числом.",
     "level": "middle",
     "tags": ["watch", "deep", "performance"],
     "enabled": true
@@ -93,8 +93,8 @@
     "id": "vue-rendering-003",
     "topicId": "vue",
     "sectionId": "vue-rendering",
-    "question": "Что дают модификаторы событий во Vue?",
-    "answer": "Модификаторы позволяют описать типичное поведение события прямо в шаблоне. Например, prevent вызывает preventDefault, stop останавливает всплытие, once запускает обработчик один раз, а enter фильтрует нажатие клавиши. Это делает обработчик короче и оставляет в нём только бизнес-логику.\n\n**Простой пример:**\n~~~vue\n<form @submit.prevent=\"save\">\n  <input @keyup.enter=\"save\">\n  <button>Сохранить</button>\n</form>\n~~~\nТеперь save не обязан самостоятельно отменять стандартную отправку формы.",
+    "question": "Как работают модификаторы событий .prevent, .stop и .once во Vue?",
+    "answer": "Модификатор добавляет типичное поведение прямо в шаблоне. .prevent отменяет стандартное действие браузера, .stop останавливает распространение события, .once оставляет один вызов обработчика. Клавиатурный .enter реагирует только на Enter.\n\n**Простой пример:**\n~~~vue\n<form @submit.prevent=\"save\">\n  <input v-model=\"name\">\n  <button type=\"submit\">Сохранить</button>\n</form>\n~~~\nБраузер не перезагрузит страницу при отправке. И кнопка, и Enter в поле отправляют форму через один обработчик submit.\n\n**Важный нюанс:** не добавляйте одновременно @keyup.enter=\"save\" в это поле без необходимости — одна клавиша может вызвать сохранение и через keyup, и через submit. .stop не отменяет стандартное действие, а .prevent не останавливает всплытие.",
     "level": "basic",
     "tags": ["events", "modifiers"],
     "enabled": true
@@ -124,7 +124,7 @@
     "topicId": "vue",
     "sectionId": "vue-ecosystem",
     "question": "Чем mutations отличаются от actions во Vuex?",
-    "answer": "В классическом Vuex mutation синхронно изменяет state, а action содержит логику, может быть асинхронным и вызывает mutation через commit. Такое разделение делает изменения состояния предсказуемыми. В современной Pinia отдельного понятия mutations нет: action может менять state напрямую.\n\n**Простой пример:**\n~~~js\nactions: {\n  async loadUser({ commit }) {\n    const user = await api.getUser()\n    commit('setUser', user)\n  }\n},\nmutations: {\n  setUser(state, user) {\n    state.user = user\n  }\n}\n~~~",
+    "answer": "Во Vuex mutation синхронно изменяет state, а action содержит логику, может ждать загрузку данных и вызывает mutation через commit. Это разделяет получение данных и изменение состояния.\n\n**Простой пример (Vuex 4 для Vue 3):**\n~~~js\nimport { createStore } from 'vuex'\n\nconst store = createStore({\n  state: () => ({ user: null }),\n  mutations: {\n    setUser(state, user) {\n      state.user = user\n    },\n  },\n  actions: {\n    async loadUser({ commit }) {\n      const response = await fetch('/api/user')\n      if (!response.ok) throw new Error('Не удалось загрузить пользователя')\n      commit('setUser', await response.json())\n    },\n  },\n})\n\n// Запуск из обработчика; ошибку нужно показать пользователю:\nstore.dispatch('loadUser').catch(console.error)\n~~~\n\n**Важный нюанс:** Vuex чаще встречается в существующих проектах. Для новых приложений Vue рекомендует Pinia: там нет отдельного понятия mutations, и actions могут менять state напрямую.",
     "level": "middle",
     "tags": ["vuex", "actions", "mutations"],
     "enabled": true
