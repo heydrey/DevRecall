@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { ArrowLeft, BookOpenCheck, BrainCircuit, Check, CircleCheck, CircleHelp, History, RotateCcw, Sparkles, Star, X } from '@lucide/vue'
+import { ArrowLeft, BookOpenCheck, BrainCircuit, Check, CircleCheck, CircleHelp, History, Lightbulb, RotateCcw, Sparkles, Star, X } from '@lucide/vue'
 import { useRoute, useRouter } from 'vue-router'
 import MarkdownContent from '../../shared/markdown/MarkdownContent.vue'
 import { StaticCardRepository } from '../content/StaticCardRepository'
@@ -8,8 +8,8 @@ import { useProgressStore } from '../progress/progressStore'
 import type { ReviewRating } from '../progress/types'
 import { useStudyStore, type StudyMode } from './studyStore'
 import type { RandomPool, SessionMinutes } from './sessionBuilder'
-import LearningWorkbench from './LearningWorkbench.vue'
-import { explainCard, hasCachedExplanation, isAiExplanationAvailable, type ExplanationMode } from './aiExplanation'
+import { buildAnswerLead, buildKeywordHint } from './cardHints'
+import { explainCard, type ExplanationMode } from './aiExplanation'
 import { buildSessionQuiz, type QuizQuestion } from './quizBuilder'
 
 const route = useRoute()
@@ -23,16 +23,12 @@ const aiError = ref('')
 const aiText = ref('')
 const aiMode = ref<ExplanationMode | null>(null)
 const aiCached = ref(false)
-const aiAvailable = ref(false)
 const quizActive = ref(false)
 const quizFinished = ref(false)
 const quizQuestions = ref<QuizQuestion[]>([])
 const quizIndex = ref(0)
 const quizSelectedOptionId = ref<string | null>(null)
 const quizCorrectCount = ref(0)
-const quizDraft = ref('')
-const quizSpoken = ref(false)
-const quizOptionsVisible = ref(false)
 
 onMounted(async () => {
   const mode = (route.query.mode as StudyMode | undefined) ?? 'today'
@@ -51,7 +47,6 @@ onMounted(async () => {
     await studyStore.start(mode, String(route.query.topicId ?? 'javascript'), route.query.sectionId ? String(route.query.sectionId) : undefined)
   }
   loading.value = false
-  void isAiExplanationAvailable().then((available) => { aiAvailable.value = available })
 })
 
 const currentNumber = computed(() => Math.min(studyStore.currentIndex + 1, studyStore.cards.length))
@@ -59,13 +54,13 @@ const favorite = computed(() => studyStore.currentCard ? progressStore.isFavorit
 const isNewCard = computed(() => studyStore.currentCard
   ? !(progressStore.progress[studyStore.currentCard.id]?.repetitions ?? 0)
   : false)
-const showAiTools = computed(() => aiAvailable.value || Boolean(studyStore.currentCard && hasCachedExplanation(studyStore.currentCard)))
+const keywordHint = computed(() => studyStore.currentCard ? buildKeywordHint(studyStore.currentCard) : '')
+const answerLead = computed(() => studyStore.currentCard ? buildAnswerLead(studyStore.currentCard) : '')
 const durationMinutes = computed(() => {
   if (!studyStore.startedAt) return 0
   return Math.max(1, Math.round((Date.now() - new Date(studyStore.startedAt).getTime()) / 60000))
 })
-const completedCards = computed(() => studyStore.cards.filter(card => studyStore.answeredCardIds.includes(card.id)))
-const uniqueSessionCardCount = computed(() => new Set(completedCards.value.map((card) => card.id)).size)
+const uniqueSessionCardCount = computed(() => new Set(studyStore.cards.map((card) => card.id)).size)
 const canStartQuiz = computed(() => uniqueSessionCardCount.value >= 2)
 const currentQuizQuestion = computed(() => quizQuestions.value[quizIndex.value] ?? null)
 const quizSelectionCorrect = computed(() => Boolean(
@@ -78,12 +73,18 @@ const quizResultTitle = computed(() => {
   return 'Материал уже стал знакомее!'
 })
 
+const ratingOptions: Array<{ value: ReviewRating; label: string; hint: string; className: string }> = [
+  { value: 'again', label: 'Изучаю', hint: 'повторим в этой сессии', className: 'rating--again' },
+  { value: 'hard', label: 'Вспомнил с трудом', hint: 'вернётся раньше', className: 'rating--hard' },
+  { value: 'good', label: 'Ответил верно', hint: 'обычный интервал', className: 'rating--good' },
+  { value: 'easy', label: 'Знал уверенно', hint: 'длинный интервал', className: 'rating--easy' },
+]
 
 const resultTitle = computed(() => studyStore.rememberedCount
   ? 'Знания стали крепче!'
   : 'Первое знакомство готово!')
 const resultText = computed(() => studyStore.mistakeCardIds.length
-  ? `${studyStore.mistakeCardIds.length} карточек требуют ещё практики.${studyStore.mode === 'today-practice' ? ' Основной график не изменён.' : ' Их оценки уже учтены в плане повторения.'}`
+  ? `${studyStore.mistakeCardIds.length} сложных карточек уже найдены и поставлены на повторение.`
   : 'Все ответы удалось вспомнить — отличный результат для одной сессии.')
 
 function rate(value: ReviewRating): void { studyStore.rate(value) }
@@ -118,20 +119,13 @@ async function requestAiExplanation(mode: ExplanationMode): Promise<void> {
 }
 
 function startQuiz(): void {
-  quizQuestions.value = buildSessionQuiz(completedCards.value)
+  quizQuestions.value = buildSessionQuiz(studyStore.cards)
   if (!quizQuestions.value.length) return
   quizIndex.value = 0
   quizSelectedOptionId.value = null
   quizCorrectCount.value = 0
   quizFinished.value = false
   quizActive.value = true
-  resetQuizAttempt()
-}
-
-function resetQuizAttempt(): void {
-  quizDraft.value = ''
-  quizSpoken.value = false
-  quizOptionsVisible.value = false
 }
 
 function selectQuizOption(optionId: string): void {
@@ -148,7 +142,6 @@ function nextQuizQuestion(): void {
   }
   quizIndex.value += 1
   quizSelectedOptionId.value = null
-  resetQuizAttempt()
 }
 
 function closeQuiz(): void {
@@ -162,7 +155,7 @@ function closeQuiz(): void {
     <header class="study-header">
       <button class="icon-button" aria-label="Закрыть обучение" @click="router.push('/')"><X :size="21" /></button>
       <div class="study-header__progress">
-        <span>{{ currentNumber }} / {{ studyStore.cards.length }}</span>
+        <span>{{ currentNumber }} / {{ studyStore.cards.length }} <template v-if="studyStore.currentStreak >= 2">· 🔥 {{ studyStore.currentStreak }}</template></span>
         <div><i :style="{ width: `${studyStore.progressPercent}%` }" /></div>
       </div>
       <button class="icon-button" :class="{ 'icon-button--favorite': favorite }" aria-label="Избранное" @click="studyStore.toggleFavorite"><Star :size="21" :fill="favorite ? 'currentColor' : 'none'" /></button>
@@ -177,16 +170,9 @@ function closeQuiz(): void {
           <div><span>Закрепление</span><strong>{{ quizIndex + 1 }} / {{ quizQuestions.length }}</strong></div>
         </header>
         <div class="quiz-progress"><i :style="{ width: `${((quizIndex + (quizSelectedOptionId ? 1 : 0)) / quizQuestions.length) * 100}%` }" /></div>
-        <span class="eyebrow">Сначала вспомните без вариантов</span>
+        <span class="eyebrow">Найдите подходящее объяснение</span>
         <h1>{{ currentQuizQuestion.prompt }}</h1>
-        <div v-if="!quizOptionsVisible" class="quiz-recall">
-          <label for="quiz-answer">Что осталось в памяти?</label>
-          <textarea id="quiz-answer" v-model="quizDraft" rows="3" maxlength="4000" placeholder="Коротко, своими словами…" />
-          <button class="secondary-button" :aria-pressed="quizSpoken" @click="quizSpoken = !quizSpoken">{{ quizSpoken ? '✓ Ответил про себя' : 'Ответил про себя' }}</button>
-          <button class="primary-button" @click="quizOptionsVisible = true">{{ quizDraft.trim() || quizSpoken ? 'Теперь сверить по вариантам' : 'Пока не вспомнил — перейти к вариантам' }}</button>
-          <p>Без оценки за формулировку. Выбор варианта проверяет узнавание, а не самостоятельное воспроизведение.</p>
-        </div>
-        <div v-else class="quiz-options">
+        <div class="quiz-options">
           <button
             v-for="(option, optionIndex) in currentQuizQuestion.options"
             :key="option.id"
@@ -221,18 +207,17 @@ function closeQuiz(): void {
     </main>
 
     <main v-else-if="studyStore.finished" class="study-center">
-      <section v-if="studyStore.completedUniqueCount" class="result-card">
+      <section v-if="studyStore.cards.length" class="result-card">
         <div class="result-card__icon"><Check :size="30" /></div>
         <span class="eyebrow">Сессия завершена</span>
         <h1>{{ resultTitle }}</h1>
         <p>Вы разобрали {{ studyStore.completedUniqueCount }} карточек за {{ durationMinutes }} мин.</p>
         <p class="result-insight">{{ resultText }}</p>
-        <p v-if="studyStore.assistedCount" class="result-insight">{{ studyStore.assistedCount }} ответов разобраны с помощью. Это обучение, не проигрыш. Интервалы не завышены.</p>
         <div class="result-grid">
           <div><strong>{{ studyStore.newCardsLearnedCount }}</strong><span>новых разобрано</span></div>
           <div><strong>{{ studyStore.mistakeCardIds.length }}</strong><span>сложных разобрано</span></div>
-          <div><strong>{{ studyStore.rememberedCount }}</strong><span>вспомнили самостоятельно</span></div>
-          <div><strong>{{ studyStore.retryCount }}</strong><span>повторных попыток со сверкой</span></div>
+          <div><strong>{{ studyStore.rememberedCount }}</strong><span>ответов вспомнили</span></div>
+          <div><strong>{{ studyStore.bestStreak }}</strong><span>лучшая серия</span></div>
         </div>
         <button v-if="canStartQuiz" class="primary-button" @click="startQuiz"><BrainCircuit :size="18" />Закрепить материал · {{ Math.min(5, uniqueSessionCardCount) }} вопросов</button>
         <button v-if="studyStore.mistakeCardIds.length" class="primary-button" @click="studyStore.repeatMistakes"><RotateCcw :size="18" />Закрепить сложные</button>
@@ -241,8 +226,8 @@ function closeQuiz(): void {
       </section>
       <section v-else class="result-card">
         <div class="result-card__icon"><Star :size="28" /></div>
-        <h1>{{ studyStore.cards.length ? 'Занятие завершено без оценок' : 'Здесь пока нет карточек' }}</h1>
-        <p>{{ studyStore.cards.length ? 'Вы пока не оценили ни одного ответа. Прогресс не изменён — можно вернуться, когда будет удобно.' : studyStore.mode === 'random' ? 'По выбранным условиям ничего не найдено. Измените тему или набор.' : 'Добавьте вопросы в избранное или выберите другой режим.' }}</p>
+        <h1>Здесь пока нет карточек</h1>
+        <p>{{ studyStore.mode === 'random' ? 'По выбранным условиям ничего не найдено. Измените тему или набор.' : 'Добавьте вопросы в избранное или выберите другой режим.' }}</p>
         <RouterLink class="primary-button" :to="studyStore.mode === 'random' ? '/study/random' : '/study?mode=today'">{{ studyStore.mode === 'random' ? 'Изменить условия' : 'Учиться сегодня' }}</RouterLink>
         <RouterLink class="back-link back-link--center" to="/"><ArrowLeft :size="18" />На главную</RouterLink>
       </section>
@@ -258,27 +243,20 @@ function closeQuiz(): void {
         </div>
         <div class="question-card__meta">
           <span>{{ studyStore.currentCard.sectionId.replace('-', ' ') }}</span>
-          <b>{{ { basic: 'База', middle: 'Средний', advanced: 'Продвинутый' }[studyStore.currentCard.level] }}</b>
+          <b>{{ studyStore.currentCard.level }}</b>
         </div>
         <h1>{{ studyStore.currentCard.question }}</h1>
-        <LearningWorkbench
-          :key="`${studyStore.currentIndex}:${studyStore.currentCard.id}`"
-          :card="studyStore.currentCard"
-          :answer-visible="studyStore.answerVisible"
-          :hint-stage="studyStore.hintStage"
-          :learning-mode="studyStore.learningMode"
-          :practice="studyStore.mode === 'today-practice'"
-          @reveal="studyStore.revealAnswer"
-          @hint="studyStore.revealHint"
-          @learn="studyStore.startLearning"
-          @rate="rate"
-          @retry="studyStore.recordRetry"
-        >
-          <template #answer>
+        <div v-if="!studyStore.answerVisible && studyStore.hintStage" class="hint-block">
+          <Lightbulb :size="20" />
+          <div>
+            <strong>{{ studyStore.hintStage === 1 ? 'Опорные понятия' : 'Начало объяснения' }}</strong>
+            <span>{{ studyStore.hintStage === 1 ? keywordHint : answerLead }}</span>
+          </div>
+        </div>
         <div v-if="studyStore.answerVisible" class="answer-block">
           <span class="answer-block__label">Ответ</span>
           <MarkdownContent :source="studyStore.currentCard.answer" />
-          <div v-if="showAiTools" class="ai-tools">
+          <div class="ai-tools">
             <div class="ai-tools__heading"><BrainCircuit :size="19" /><div><strong>Выберите глубину разбора</strong><span>Оба режима объясняют именно эту карточку.</span></div></div>
             <div class="ai-tools__buttons">
               <button :disabled="aiLoading" @click="requestAiExplanation('simple')"><Sparkles :size="17" /><span><strong>Объяснить проще</strong><small>Без жаргона, с аналогией и словарём</small></span></button>
@@ -293,20 +271,38 @@ function closeQuiz(): void {
             <small>Ответ создан ИИ и может содержать неточность. Текст карточки остаётся основным.</small>
           </section>
         </div>
-          </template>
-        </LearningWorkbench>
       </section>
 
-      <div class="study-actions">
-        <button class="hint-button" @click="studyStore.finishSession">Завершить занятие · к итогам</button>
-        <p>Уже оценённые ответы сохранены. Черновик текущей карточки в прогресс не попадёт.</p>
+      <div v-if="!studyStore.answerVisible" class="study-actions">
+        <p>{{ isNewCard ? 'Можно попробовать догадаться или сразу изучить объяснение — оба варианта полезны.' : 'Сформулируйте ответ вслух или про себя, затем сверьте себя.' }}</p>
+        <button v-if="studyStore.hintStage < 2" class="hint-button" @click="studyStore.revealHint"><Lightbulb :size="17" />{{ studyStore.hintStage ? 'Ещё подсказка' : 'Нужна подсказка' }}</button>
+        <button class="primary-button" @click="studyStore.revealAnswer">Сверить ответ</button>
+        <button class="secondary-button" @click="studyStore.startLearning"><BookOpenCheck :size="18" />Не знаю — объясни</button>
+      </div>
+      <div v-else-if="studyStore.learningMode" class="rating-panel learning-panel">
+        <div class="learning-panel__message"><BookOpenCheck :size="21" /><div><strong>Теперь этот вопрос уже знаком</strong><span>Не знать до объяснения нормально. Следующая встреча закрепит ответ.</span></div></div>
+        <button class="primary-button" @click="rate('again')">Понятно, повторим позже</button>
+      </div>
+      <div v-else-if="studyStore.mode === 'today-practice'" class="rating-panel">
+        <p>Удалось вспомнить объяснение до просмотра?</p>
+        <div class="rating-grid practice-rating-grid">
+          <button class="rating-button rating--again" @click="rate('again')"><strong>Пока нет</strong><span>покажем ещё раз в этой сессии</span></button>
+          <button class="rating-button rating--good" @click="rate('good')"><strong>Да, вспомнил</strong><span>двигаемся дальше</span></button>
+        </div>
+      </div>
+      <div v-else class="rating-panel">
+        <p>Что вы помнили до просмотра ответа?</p>
+        <div class="rating-grid">
+          <button v-for="option in ratingOptions" :key="option.value" :class="['rating-button', option.className]" @click="rate(option.value)">
+            <strong>{{ option.label }}</strong><span>{{ option.hint }}</span>
+          </button>
+        </div>
       </div>
     </main>
   </div>
 </template>
 
 <style scoped>
-.quiz-recall { display:grid; gap:14px; }.quiz-recall textarea { width:100%; min-width:0; box-sizing:border-box; padding:14px; border:1px solid var(--border-subtle); border-radius:16px; background:var(--surface-muted); color:var(--text); font:inherit; font-size:16px; resize:vertical; }.quiz-recall p { color:var(--text-muted); font-size:.8rem; line-height:1.5; }
 .study-page { min-height:100dvh; background:var(--page); }
 .study-header { position:sticky; z-index:10; top:0; display:grid; grid-template-columns:44px 1fr 44px; align-items:center; gap:14px; width:min(100%,760px); margin:0 auto; padding:14px 16px; background:color-mix(in srgb,var(--page) 88%,transparent); backdrop-filter:blur(18px); }
 .study-header__progress { display:flex; flex-direction:column; gap:7px; text-align:center; }

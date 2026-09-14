@@ -6,7 +6,6 @@ import { StaticCardRepository } from '../content/StaticCardRepository'
 import type { Card, Topic } from '../content/types'
 import { useProgressStore } from '../progress/progressStore'
 import { calculateCurrentStreak } from '../statistics/calculateStreak'
-import LearningProgress from '../statistics/LearningProgress.vue'
 
 const repository = new StaticCardRepository()
 const progressStore = useProgressStore()
@@ -104,10 +103,8 @@ const cardWord = (count: number) => {
 
     <section class="training-note">
       <div><BrainCircuit :size="22" /></div>
-      <p><strong>Вспомнить → сверить → объяснить самому</strong><span>В карточках теперь есть черновик, опорные мысли и повторная попытка. Не нужно отвечать дословно. Впервые видите тему? Начните с разбора примера.</span></p>
+      <p><strong>Это тренировка, а не экзамен</strong><span>Не знаете ответ — попросите подсказку или объяснение. Найденный пробел уже считается полезным результатом.</span></p>
     </section>
-
-    <LearningProgress :cards="cards" />
 
     <section>
       <div class="section-heading">

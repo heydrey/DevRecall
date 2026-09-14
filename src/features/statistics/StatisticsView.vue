@@ -4,7 +4,6 @@ import { Brain, CalendarClock, Flame, TrendingUp } from '@lucide/vue'
 import { StaticCardRepository } from '../content/StaticCardRepository'
 import type { Card, Topic } from '../content/types'
 import { useProgressStore } from '../progress/progressStore'
-import LearningProgress from './LearningProgress.vue'
 
 const store = useProgressStore()
 const repository = new StaticCardRepository()
@@ -76,8 +75,6 @@ const weakTopics = computed(() => {
       <article><Brain :size="20" /><strong>{{ learning }}</strong><span>в изучении</span></article>
       <article><Flame :size="20" /><strong>{{ mature }}</strong><span>хорошо закреплено</span></article>
     </div>
-
-    <LearningProgress :cards="cards" />
 
     <section class="chart-card rate-card">
       <div><span>Успешные ответы за 7 дней</span><strong>{{ successRate(7) }}%</strong></div>
