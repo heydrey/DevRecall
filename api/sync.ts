@@ -108,8 +108,17 @@ async function applyReview(client: SupabaseClient, userId: string, deviceId: str
   if (!error) return true
   if (error.code !== '23505') throw databaseError('Не удалось сохранить ответ на карточку', error)
 
-  const { data: existing } = await client.from('review_events').select('card_id, rating, reviewed_at').eq('id', mutation.id).single()
-  if (!existing || existing.card_id !== mutation.cardId || existing.rating !== mutation.rating || existing.reviewed_at !== mutation.reviewedAt) {
+  const { data: existing, error: lookupError } = await client.from('review_events')
+    .select('card_id, rating, reviewed_at')
+    .eq('id', mutation.id)
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (lookupError) throw databaseError('Не удалось проверить ранее сохранённый ответ', lookupError)
+
+  // timestamptz may return +00:00 instead of Z; compare instants, not serialization.
+  const sameReviewedAt = existing && validIso(existing.reviewed_at)
+    && Date.parse(existing.reviewed_at) === Date.parse(mutation.reviewedAt)
+  if (!existing || existing.card_id !== mutation.cardId || existing.rating !== mutation.rating || !sameReviewedAt) {
     throw new ApiError(409, 'Это изменение уже существует с другими данными.')
   }
   return false
