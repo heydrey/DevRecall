@@ -4,6 +4,7 @@ import { StaticCardRepository } from '../content/StaticCardRepository'
 import type { Card } from '../content/types'
 import { useProgressStore } from '../progress/progressStore'
 import type { ReviewRating } from '../progress/types'
+import { reviewedTodayIds } from '../progress/reviewedToday'
 import {
   buildPlannedSession,
   buildRandomSession,
@@ -140,7 +141,8 @@ export const useStudyStore = defineStore('study', () => {
     } else {
       const sessionMode = nextMode === 'section' ? 'section' : 'topic'
       const scope = sessionMode === 'section' ? `${topicId}:${sectionId ?? 'all'}` : topicId
-      resetSession(sessionMode, shuffledTopicCards(source, scope))
+      const answeredToday = reviewedTodayIds(progressStore.reviewEvents)
+      resetSession(sessionMode, shuffledTopicCards(source.filter((card) => !answeredToday.has(card.id)), scope))
     }
   }
 

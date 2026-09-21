@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { ArrowLeft, ArrowRight, CircleAlert, Layers3 } from '@lucide/vue'
 import { useRoute } from 'vue-router'
 import { useProgressStore } from '../progress/progressStore'
+import { reviewedTodayIds } from '../progress/reviewedToday'
 import { StaticCardRepository } from './StaticCardRepository'
 import type { Card, Topic } from './types'
 
@@ -10,6 +11,15 @@ const route = useRoute()
 const progressStore = useProgressStore()
 const topic = ref<Topic | null>(null)
 const cards = ref<Card[]>([])
+const now = ref(new Date())
+const dayTimer = window.setInterval(() => { now.value = new Date() }, 30_000)
+onUnmounted(() => window.clearInterval(dayTimer))
+const answeredToday = computed(() => reviewedTodayIds(progressStore.reviewEvents, now.value))
+const remaining = computed(() => cards.value.filter((card) => !answeredToday.value.has(card.id)).length)
+const completedToday = computed(() => cards.value.length - remaining.value)
+function sectionRemaining(sectionId: string): number {
+  return cards.value.filter((card) => card.sectionId === sectionId && !answeredToday.value.has(card.id)).length
+}
 
 onMounted(async () => {
   const repository = new StaticCardRepository()
@@ -42,9 +52,11 @@ const topicBadge = computed(() => {
       <p>{{ topic.description }}</p>
       <div class="topic-hero__progress"><span :style="{ width: `${percent}%` }" /></div>
       <div class="topic-hero__meta"><span>{{ learned }} из {{ cards.length }} начато</span><strong>{{ percent }}%</strong></div>
-      <RouterLink class="primary-button" :to="`/study?mode=topic&topicId=${topic.id}`">
-        Учить тему <ArrowRight :size="19" />
+      <p class="topic-hero__today">Сегодня пройдено {{ completedToday }} из {{ cards.length }} · осталось {{ remaining }}</p>
+      <RouterLink v-if="remaining" class="primary-button" :to="`/study?mode=topic&topicId=${topic.id}`">
+        {{ completedToday ? 'Продолжить тему' : 'Учить тему' }} <ArrowRight :size="19" />
       </RouterLink>
+      <p v-else>На сегодня вся тема пройдена. Повторить карточки можно в свободной тренировке на главной.</p>
     </header>
     <div class="mini-stats">
       <article><Layers3 :size="19" /><strong>{{ due }}</strong><span>к повторению</span></article>
@@ -58,7 +70,7 @@ const topicBadge = computed(() => {
           :key="section.id"
           :to="{ path: '/study', query: { mode: 'section', topicId: topic.id, sectionId: section.id } }"
         >
-          <div><strong>{{ section.title }}</strong><span>{{ section.description }}</span></div>
+          <div><strong>{{ section.title }}</strong><span>{{ section.description }}</span><span>{{ sectionRemaining(section.id) ? `Осталось на сегодня: ${sectionRemaining(section.id)}` : 'На сегодня всё пройдено' }}</span></div>
           <b>{{ cards.filter((card) => card.sectionId === section.id).length }}</b>
           <ArrowRight :size="19" />
         </RouterLink>
@@ -76,6 +88,7 @@ const topicBadge = computed(() => {
 .topic-hero__progress span { display:block; height:100%; border-radius:inherit; background:var(--primary); }
 .topic-hero__meta { display:flex; justify-content:space-between; margin-bottom:20px; color:var(--text-muted); font-size:.8rem; }
 .topic-hero__meta strong { color:var(--primary); }
+.topic-hero .topic-hero__today { margin-bottom:14px; font-size:.85rem; }
 .mini-stats { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .mini-stats article { display:grid; grid-template-columns:auto 1fr; gap:2px 10px; align-items:center; padding:16px; border:1px solid var(--border-subtle); border-radius:22px; background:var(--surface); }
 .mini-stats svg { grid-row:span 2; color:var(--primary); }

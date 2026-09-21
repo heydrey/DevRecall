@@ -222,13 +222,14 @@ function closeQuiz(): void {
         </div>
         <button v-if="canStartQuiz" class="primary-button" @click="startQuiz"><BrainCircuit :size="18" />Закрепить материал · {{ Math.min(5, uniqueSessionCardCount) }} вопросов</button>
         <button v-if="studyStore.mistakeCardIds.length" class="primary-button" @click="studyStore.repeatMistakes"><RotateCcw :size="18" />Закрепить сложные</button>
-        <button class="secondary-button" @click="studyStore.restartSession"><RotateCcw :size="18" />{{ studyStore.mode === 'random' ? 'Ещё одна случайная тренировка' : 'Пройти ещё раз' }}</button>
+        <button v-if="studyStore.mode !== 'topic' && studyStore.mode !== 'section'" class="secondary-button" @click="studyStore.restartSession"><RotateCcw :size="18" />{{ studyStore.mode === 'random' ? 'Ещё одна случайная тренировка' : 'Пройти ещё раз' }}</button>
+        <RouterLink v-else class="secondary-button" to="/topics">Вернуться к темам</RouterLink>
         <RouterLink class="back-link back-link--center" to="/">На главную</RouterLink>
       </section>
       <section v-else class="result-card">
         <div class="result-card__icon"><Star :size="28" /></div>
-        <h1>Здесь пока нет карточек</h1>
-        <p>{{ studyStore.mode === 'random' ? 'По выбранным условиям ничего не найдено. Измените тему или набор.' : 'Добавьте вопросы в избранное или выберите другой режим.' }}</p>
+        <h1>{{ studyStore.mode === 'topic' || studyStore.mode === 'section' ? 'На сегодня всё пройдено' : 'Здесь пока нет карточек' }}</h1>
+        <p>{{ studyStore.mode === 'topic' || studyStore.mode === 'section' ? 'В этой теме или разделе не осталось карточек без сегодняшнего ответа. Завтра они снова будут доступны. Для дополнительного повторения выберите свободную тренировку на главной.' : studyStore.mode === 'random' ? 'По выбранным условиям ничего не найдено. Измените тему или набор.' : 'Добавьте вопросы в избранное или выберите другой режим.' }}</p>
         <RouterLink class="primary-button" :to="studyStore.mode === 'random' ? '/study/random' : '/study?mode=today'">{{ studyStore.mode === 'random' ? 'Изменить условия' : 'Учиться сегодня' }}</RouterLink>
         <RouterLink class="back-link back-link--center" to="/"><ArrowLeft :size="18" />На главную</RouterLink>
       </section>
