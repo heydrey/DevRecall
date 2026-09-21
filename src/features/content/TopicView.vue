@@ -52,11 +52,15 @@ const topicBadge = computed(() => {
       <p>{{ topic.description }}</p>
       <div class="topic-hero__progress"><span :style="{ width: `${percent}%` }" /></div>
       <div class="topic-hero__meta"><span>{{ learned }} из {{ cards.length }} начато</span><strong>{{ percent }}%</strong></div>
-      <p class="topic-hero__today">Сегодня пройдено {{ completedToday }} из {{ cards.length }} · осталось {{ remaining }}</p>
+      <p class="topic-hero__today">Сегодня отвечено верно {{ completedToday }} из {{ cards.length }} · осталось {{ remaining }}</p>
+      <div class="topic-actions">
+      <RouterLink class="secondary-button" :to="`/topics/${topic.id}/questions`">Все вопросы · {{ cards.length }}</RouterLink>
       <RouterLink v-if="remaining" class="primary-button" :to="`/study?mode=topic&topicId=${topic.id}`">
-        {{ completedToday ? 'Продолжить тему' : 'Учить тему' }} <ArrowRight :size="19" />
+        {{ completedToday ? 'Продолжить на сегодня' : 'Тренировка на сегодня' }} <ArrowRight :size="19" />
       </RouterLink>
-      <p v-else>На сегодня вся тема пройдена. Повторить карточки можно в свободной тренировке на главной.</p>
+      <button v-else class="primary-button" disabled>На сегодня всё пройдено</button>
+      </div>
+      <p class="topic-hero__rule">Из дневной тренировки уходят только ответы «Ответил верно» и «Знал уверенно» без подсказки. Все вопросы всегда доступны в списке.</p>
     </header>
     <div class="mini-stats">
       <article><Layers3 :size="19" /><strong>{{ due }}</strong><span>к повторению</span></article>
@@ -89,6 +93,8 @@ const topicBadge = computed(() => {
 .topic-hero__meta { display:flex; justify-content:space-between; margin-bottom:20px; color:var(--text-muted); font-size:.8rem; }
 .topic-hero__meta strong { color:var(--primary); }
 .topic-hero .topic-hero__today { margin-bottom:14px; font-size:.85rem; }
+.topic-actions { display:flex; flex-wrap:wrap; gap:10px; }
+.topic-hero .topic-hero__rule { margin-top:12px; font-size:.8rem; }
 .mini-stats { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .mini-stats article { display:grid; grid-template-columns:auto 1fr; gap:2px 10px; align-items:center; padding:16px; border:1px solid var(--border-subtle); border-radius:22px; background:var(--surface); }
 .mini-stats svg { grid-row:span 2; color:var(--primary); }

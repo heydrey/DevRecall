@@ -6,6 +6,6 @@ export function reviewedTodayIds(events: ReviewEvent[], now = new Date()): Set<s
   const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime()
   return new Set(events.filter((event) => {
     const timestamp = Date.parse(event.reviewedAt)
-    return timestamp >= start && timestamp < end
+    return timestamp >= start && timestamp < end && (event.rating === 'good' || event.rating === 'easy')
   }).map((event) => event.cardId))
 }

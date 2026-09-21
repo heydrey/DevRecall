@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import HomeView from '../features/home/HomeView.vue'
 import TopicsView from '../features/content/TopicsView.vue'
 import TopicView from '../features/content/TopicView.vue'
+import TopicQuestionsView from '../features/content/TopicQuestionsView.vue'
 import StudyView from '../features/study/StudyView.vue'
 import RandomStudyView from '../features/study/RandomStudyView.vue'
 import FavoritesView from '../features/favorites/FavoritesView.vue'
@@ -14,6 +15,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/', name: 'home', component: HomeView },
   { path: '/topics', name: 'topics', component: TopicsView },
   { path: '/topics/:topicId', name: 'topic', component: TopicView },
+  { path: '/topics/:topicId/questions', name: 'topic-questions', component: TopicQuestionsView },
   { path: '/study/random', name: 'random-study', component: RandomStudyView },
   { path: '/study', name: 'study', component: StudyView, meta: { hideNavigation: true } },
   { path: '/favorites', name: 'favorites', component: FavoritesView },

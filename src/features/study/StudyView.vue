@@ -45,7 +45,7 @@ onMounted(async () => {
       : progressStore.settings.sessionMinutes
     await studyStore.startRandom({ topicId, pool, minutes })
   } else {
-    await studyStore.start(mode, String(route.query.topicId ?? 'javascript'), route.query.sectionId ? String(route.query.sectionId) : undefined)
+    await studyStore.start(mode, String(route.query.topicId ?? 'javascript'), route.query.sectionId ? String(route.query.sectionId) : undefined, route.query.cardId ? String(route.query.cardId) : undefined)
   }
   loading.value = false
 })
@@ -154,9 +154,10 @@ function closeQuiz(): void {
 <template>
   <div class="study-page">
     <header class="study-header">
-      <button class="icon-button" aria-label="Закрыть обучение" @click="router.push('/')"><X :size="21" /></button>
+      <button class="icon-button" aria-label="Закрыть обучение" @click="router.push(studyStore.mode === 'browse' ? `/topics/${route.query.topicId}/questions` : '/')"><X :size="21" /></button>
       <div class="study-header__progress">
-        <span>{{ currentNumber }} / {{ studyStore.cards.length }} <template v-if="studyStore.currentStreak >= 2">· 🔥 {{ studyStore.currentStreak }}</template></span>
+        <span v-if="studyStore.mode === 'browse'">Разбор вопроса</span>
+        <span v-else>{{ currentNumber }} / {{ studyStore.cards.length }} <template v-if="studyStore.currentStreak >= 2">· 🔥 {{ studyStore.currentStreak }}</template></span>
         <div><i :style="{ width: `${studyStore.progressPercent}%` }" /></div>
       </div>
       <button class="icon-button" :class="{ 'icon-button--favorite': favorite }" aria-label="Избранное" @click="studyStore.toggleFavorite"><Star :size="21" :fill="favorite ? 'currentColor' : 'none'" /></button>
@@ -276,7 +277,10 @@ function closeQuiz(): void {
         </div>
       </section>
 
-      <div v-if="!studyStore.answerVisible" class="study-actions">
+      <div v-if="studyStore.mode === 'browse'" class="study-actions">
+        <RouterLink class="secondary-button" :to="`/topics/${route.query.topicId}/questions`"><ArrowLeft :size="18" />К списку вопросов</RouterLink>
+      </div>
+      <div v-else-if="!studyStore.answerVisible" class="study-actions">
         <p>{{ isNewCard ? 'Можно попробовать догадаться или сразу изучить объяснение — оба варианта полезны.' : 'Сформулируйте ответ вслух или про себя, затем сверьте себя.' }}</p>
         <button v-if="studyStore.hintStage < 2" class="hint-button" @click="studyStore.revealHint"><Lightbulb :size="17" />{{ studyStore.hintStage ? 'Ещё подсказка' : 'Нужна подсказка' }}</button>
         <button class="primary-button" @click="studyStore.revealAnswer">Сверить ответ</button>

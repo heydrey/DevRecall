@@ -12,7 +12,7 @@ import {
   type RandomSessionOptions,
 } from './sessionBuilder'
 
-export type StudyMode = 'today' | 'today-practice' | 'topic' | 'section' | 'favorites' | 'difficult' | 'random' | 'mistakes'
+export type StudyMode = 'today' | 'today-practice' | 'topic' | 'section' | 'favorites' | 'difficult' | 'random' | 'mistakes' | 'browse'
 
 const repository = new StaticCardRepository()
 const LAST_TOPIC_FIRST_CARD_KEY = 'devrecall:last-topic-first-card:v1'
@@ -99,11 +99,18 @@ export const useStudyStore = defineStore('study', () => {
     bestStreak.value = 0
   }
 
-  async function start(nextMode: StudyMode, topicId = 'javascript', sectionId?: string): Promise<void> {
+  async function start(nextMode: StudyMode, topicId = 'javascript', sectionId?: string, cardId?: string): Promise<void> {
     const progressStore = useProgressStore()
     lastTopicId.value = topicId
     lastSectionId.value = sectionId
     randomOptions.value = null
+
+    if (nextMode === 'browse') {
+      const topicCards = await repository.getCardsByTopic(topicId)
+      resetSession('browse', topicCards.filter(card => card.id === cardId))
+      answerVisible.value = true
+      return
+    }
 
     if (nextMode === 'today') {
       const allCards = await repository.getCards()
@@ -191,7 +198,7 @@ export const useStudyStore = defineStore('study', () => {
   function rate(rating: ReviewRating): void {
     const progressStore = useProgressStore()
     const card = currentCard.value
-    if (!card || !answerVisible.value) return
+    if (!card || !answerVisible.value || mode.value === 'browse') return
 
     // Подсказка не должна засчитываться как самостоятельное воспроизведение.
     const effectiveRating: ReviewRating = learningMode.value || hintStage.value > 0 ? 'again' : rating
