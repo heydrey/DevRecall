@@ -1,0 +1,52 @@
+[
+  {
+    "id": "vue-practice-001",
+    "topicId": "vue",
+    "sectionId": "vue-components",
+    "question": "Как типизировать props и события компонента в <script setup lang=\"ts\">?",
+    "answer": "`defineProps` описывает входные данные компонента, а `defineEmits` — события, которыми он сообщает о действиях родителю. Типы помогают редактору заранее обнаружить неверное имя или значение. Оба вызова — макросы компилятора Vue: импортировать их не нужно.\n\n**Простой пример:**\n~~~vue\n<script setup lang=\"ts\">\nconst props = defineProps<{ title: string; count?: number }>()\nconst emit = defineEmits<{ save: [title: string] }>()\n\nfunction save() {\n  emit('save', props.title)\n}\n</script>\n<template>\n  <button @click=\"save\">Сохранить {{ title }}</button>\n</template>\n~~~\n`title` обязателен, `count` можно не передавать, а событие `save` несёт строку. Родитель слушает его через `@save`.\n\n**Важный нюанс:** типы TypeScript исчезают при сборке. Если данные пришли из внешнего API, проверяйте их на границе приложения; типизация props сама по себе не проверяет ответ сервера.",
+    "level": "middle",
+    "tags": ["typescript", "defineProps", "defineEmits"],
+    "enabled": true
+  },
+  {
+    "id": "vue-practice-002",
+    "topicId": "vue",
+    "sectionId": "vue-ecosystem",
+    "question": "Почему после деструктуризации Pinia store значение перестаёт обновляться и как помогает storeToRefs?",
+    "answer": "У store можно читать `store.count` прямо в шаблоне. Но запись `const { count } = store` извлекает текущее число: переменная `count` уже не связана с реактивным свойством. `storeToRefs(store)` возвращает ref для состояния и getters, сохраняя связь. Действия (actions) можно извлекать отдельно из самого store.\n\n**Простой пример:**\n~~~js\nimport { storeToRefs } from 'pinia'\nconst store = useCounterStore()\nconst { count } = storeToRefs(store)\nconst { increment } = store\nincrement()\nconsole.log(count.value) // новое значение\n~~~\n\n**Когда применять:** если удобнее обращаться к отдельным полям, используйте `storeToRefs`. Если удобнее писать `store.count`, ничего извлекать не требуется. Это правило относится к состоянию Pinia, а не к функциям действий.",
+    "level": "basic",
+    "tags": ["pinia", "storeToRefs", "reactivity"],
+    "enabled": true
+  },
+  {
+    "id": "vue-practice-003",
+    "topicId": "vue",
+    "sectionId": "vue-components",
+    "question": "Как получить доступ к DOM-элементу через template ref и когда он доступен?",
+    "answer": "Template ref связывает элемент шаблона с переменной в компоненте. До первого отображения элемента его ещё нет, поэтому обращаться к нему безопасно после `onMounted`. Если элемент скрыт через `v-if`, ссылка снова может стать `null`. Во Vue 3.5+ для этого удобно использовать `useTemplateRef`.\n\n**Простой пример:**\n~~~vue\n<script setup>\nimport { onMounted, useTemplateRef } from 'vue'\nconst input = useTemplateRef('search')\nonMounted(() => input.value?.focus())\n</script>\n<template>\n  <input ref=\"search\" placeholder=\"Поиск\">\n</template>\n~~~\n\n**Когда применять:** для фокуса или измерения размера элемента. Содержимое обычного текста и атрибуты по возможности меняют через реактивное состояние и шаблон. В Vue до 3.5 используется `ref(null)` с тем же именем, что и атрибут `ref`.",
+    "level": "basic",
+    "tags": ["template-ref", "useTemplateRef", "dom"],
+    "enabled": true
+  },
+  {
+    "id": "vue-practice-004",
+    "topicId": "vue",
+    "sectionId": "vue-reactivity",
+    "question": "Почему watch видит старый DOM после изменения данных и когда нужен flush: 'post'?",
+    "answer": "По умолчанию callback `watch` запускается до обновления DOM собственного компонента. Реактивное значение уже новое, но элемент на странице ещё может содержать старый текст. Если эффекту нужен обновлённый DOM, задайте `flush: 'post'`. Для однократного ожидания после изменения состояния подходит `await nextTick()`.\n\n**Простой пример:**\n~~~js\nwatch(message, () => {\n  console.log(label.value?.textContent) // уже обновлённый текст\n}, { flush: 'post' })\n~~~\nЗдесь `label` — template ref на элемент, который отображает `message`.\n\n**Важный нюанс:** `flush: 'post'` меняет время запуска, а не делает саму переменную более реактивной. `flush: 'sync'` запускается сразу при каждом изменении и не группирует частые изменения; его применяют осторожно.",
+    "level": "middle",
+    "tags": ["watch", "flush", "dom"],
+    "enabled": true
+  },
+  {
+    "id": "vue-practice-005",
+    "topicId": "vue",
+    "sectionId": "vue-rendering",
+    "question": "Чем вывод {{ text }} отличается от v-html и когда v-html опасен?",
+    "answer": "`{{ text }}` выводит строку как текст: символы `<` и `>` не превращаются в HTML-теги. `v-html` вставляет строку именно как HTML. Это нужно редко, например для заранее подготовленного доверенного фрагмента. Если вставить туда чужой HTML без безопасной обработки, можно допустить XSS — выполнение нежелательного кода в браузере.\n\n**Простой пример:** строка `<strong>Привет</strong>` через `{{ text }}` покажет сами теги, а через `<div v-html=\"text\" />` покажет жирное слово.\n\n**Что важно сказать на собеседовании:** пользовательский ввод и ответ внешнего сервиса нельзя просто передавать в `v-html`. Для обычного текста используют интерполяцию, а для разрешённого HTML нужна проверенная очистка по строгим правилам.",
+    "level": "middle",
+    "tags": ["v-html", "xss", "security"],
+    "enabled": true
+  }
+]
