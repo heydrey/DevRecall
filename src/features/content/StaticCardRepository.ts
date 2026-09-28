@@ -11,6 +11,7 @@ import vueArchitectureJson from './content/vue/architecture.json'
 import vue2026Json from './content/vue/interview-2026.json'
 import vueExtended2026Json from './content/vue/extended-2026.json'
 import vueCurrentPracticeJson from './content/vue/current-practice.json'
+import vueLegacyJson from './content/vue/vue-2-practice.json'
 import htmlCssInterviewJson from './content/html-css/interview.json'
 import browserWebInterviewJson from './content/browser-web/interview.json'
 import browserRenderingStorageJson from './content/browser-web/rendering-storage.json'
@@ -66,6 +67,7 @@ const cards = cardSchema.array().parse([
   ...vue2026Json,
   ...vueExtended2026Json,
   ...vueCurrentPracticeJson,
+  ...vueLegacyJson,
   ...htmlCssInterviewJson,
   ...browserWebInterviewJson,
   ...browserRenderingStorageJson,

@@ -16,9 +16,10 @@
   {
     "id": "vue",
     "title": "Vue",
-    "description": "Компоненты, реактивность, жизненный цикл, Vue Router и управление состоянием.",
+    "description": "Vue 2 и Vue 3: общие основы, отличия версий, компоненты, реактивность, Router и состояние.",
     "accent": "#42b883",
     "sections": [
+      { "id": "vue-legacy", "topicId": "vue", "title": "Vue 2 на практике", "description": "Options API, жизненный цикл, v-model, Vue Router 3 и Vuex 3." },
       { "id": "vue-components", "topicId": "vue", "title": "Компоненты", "description": "Props, события, слоты и связь компонентов." },
       { "id": "vue-reactivity", "topicId": "vue", "title": "Реактивность", "description": "Composition API, watch, computed и nextTick." },
       { "id": "vue-rendering", "topicId": "vue", "title": "Шаблоны и рендеринг", "description": "Директивы, стили, переходы и оптимизация." },

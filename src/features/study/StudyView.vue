@@ -4,6 +4,7 @@ import { ArrowLeft, BookOpenCheck, BrainCircuit, Check, CircleCheck, CircleHelp,
 import { useRoute, useRouter } from 'vue-router'
 import MarkdownContent from '../../shared/markdown/MarkdownContent.vue'
 import { StaticCardRepository } from '../content/StaticCardRepository'
+import { getVueVersion, vueVersionLabel } from '../content/vueVersion'
 import { useProgressStore } from '../progress/progressStore'
 import type { ReviewRating } from '../progress/types'
 import { useStudyStore, type StudyMode } from './studyStore'
@@ -240,7 +241,7 @@ function closeQuiz(): void {
       <div v-if="progressStore.persistenceWarning" class="persistence-warning">{{ progressStore.persistenceWarning }}<button @click="progressStore.clearPersistenceWarning">×</button></div>
       <section class="question-card">
         <div v-if="studyStore.mode === 'today-practice'" class="practice-note"><History :size="18" /><div><strong>Повторение сегодняшнего материала</strong><span>Ответы здесь не изменяют основной график повторений.</span></div></div>
-        <div v-if="isNewCard" class="new-card-note">
+        <div v-if="isNewCard && studyStore.mode !== 'browse'" class="new-card-note">
           <Sparkles :size="18" />
           <div><strong>Новая карточка</strong><span>Её не нужно знать заранее — сейчас разберём.</span></div>
         </div>
@@ -248,6 +249,7 @@ function closeQuiz(): void {
           <span>{{ studyStore.currentCard.sectionId.replace('-', ' ') }}</span>
           <b>{{ studyStore.currentCard.level }}</b>
         </div>
+        <p v-if="getVueVersion(studyStore.currentCard)" class="vue-version-label">{{ vueVersionLabel(getVueVersion(studyStore.currentCard)!) }}</p>
         <h1>{{ studyStore.currentCard.question }}</h1>
         <div v-if="!studyStore.answerVisible && studyStore.hintStage" class="hint-block">
           <Lightbulb :size="20" />
@@ -326,6 +328,7 @@ function closeQuiz(): void {
 .new-card-note > div { display:flex; flex-direction:column; gap:2px; }.new-card-note strong { font-size:.78rem; }.new-card-note span { color:var(--text-muted); font-size:.7rem; }
 .question-card__meta { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .question-card__meta span,.question-card__meta b { padding:7px 10px; border-radius:999px; background:var(--surface-muted); color:var(--text-muted); font-size:.68rem; font-weight:800; text-transform:uppercase; }
+.vue-version-label { width:max-content; max-width:100%; margin:14px 0 0; padding:5px 10px; border-radius:10px; background:var(--primary-soft); color:var(--primary); font-size:.75rem; font-weight:800; }
 .question-card h1 { margin:34px 0; font-size:clamp(1.55rem,6vw,2.35rem); line-height:1.25; letter-spacing:-.035em; }
 .answer-block { min-width:0; max-width:100%; padding-top:22px; border-top:1px solid var(--border-subtle); animation:answer-in 180ms ease; }
 .hint-block { display:flex; align-items:flex-start; gap:11px; margin:0 0 22px; padding:14px; border:1px solid color-mix(in srgb,#e5ad32 42%,var(--border-subtle)); border-radius:18px; background:color-mix(in srgb,#fff4cf 70%,var(--surface)); color:#9b6912; animation:answer-in 180ms ease; }

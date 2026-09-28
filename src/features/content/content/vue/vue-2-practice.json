@@ -1,0 +1,52 @@
+[
+  {
+    "id": "vue-legacy-001",
+    "topicId": "vue",
+    "sectionId": "vue-legacy",
+    "question": "Как устроен компонент Vue 2 с Options API: data, computed, methods и props?",
+    "answer": "Во Vue 2 состояние компонента обычно описывают в `data()`. `props` приходят от родителя; `computed` вычисляет значение из реактивных данных и кэширует его; `methods` содержит действия, например обработчик нажатия. Для переиспользуемого компонента `data` должна быть функцией, чтобы каждый экземпляр получал собственное состояние.\n\n**Простой пример:**\n~~~js\nexport default {\n  props: { name: { type: String, required: true } },\n  data() { return { count: 0 } },\n  computed: { greeting() { return `Привет, ${this.name}` } },\n  methods: { increment() { this.count++ } }\n}\n~~~\nВ шаблоне можно вывести `{{ greeting }}` и вызвать `increment` через `@click`. `this` здесь обращается к данным и методам экземпляра.\n\n**На собеседовании:** объясните, что изменение prop внутри дочернего компонента нарушает поток данных: дочерний компонент сообщает родителю о действии через `$emit`, а родитель обновляет prop. В Vue 3 Options API тоже поддерживается.",
+    "level": "basic",
+    "tags": ["vue2", "options-api", "data", "computed"],
+    "enabled": true
+  },
+  {
+    "id": "vue-legacy-002",
+    "topicId": "vue",
+    "sectionId": "vue-legacy",
+    "question": "В каком порядке работают основные хуки жизненного цикла Vue 2 и где очищать подписки?",
+    "answer": "При создании экземпляра сначала вызывается `created`, затем перед появлением DOM — `beforeMount`, после вставки — `mounted`. При изменении реактивных данных вокруг обновления DOM вызываются `beforeUpdate` и `updated`. Перед уничтожением компонента запускается `beforeDestroy`, после — `destroyed`.\n\n**Простой пример:** если компонент добавил обработчик `resize` в `mounted`, удалить его можно в `beforeDestroy`:\n~~~js\nexport default {\n  mounted() { window.addEventListener('resize', this.onResize) },\n  beforeDestroy() { window.removeEventListener('resize', this.onResize) },\n  methods: { onResize() { /* обновить состояние */ } }\n}\n~~~\n\n**Нюанс:** в Vue 3 соответствующие хуки уничтожения называются `beforeUnmount` и `unmounted`. Для кэшированного через `KeepAlive` компонента временное скрытие вызывает `deactivated`, а не `beforeDestroy`.",
+    "level": "basic",
+    "tags": ["vue2", "lifecycle", "cleanup"],
+    "enabled": true
+  },
+  {
+    "id": "vue-legacy-003",
+    "topicId": "vue",
+    "sectionId": "vue-legacy",
+    "question": "Как вручную реализовать v-model для своего компонента во Vue 2 и чем отличается Vue 3?",
+    "answer": "Во Vue 2 обычный `v-model` компонента по умолчанию передаёт prop `value` и слушает событие `input`. Дочерний компонент показывает полученное значение и при изменении вызывает `$emit('input', новоеЗначение)`.\n\n**Простой пример — Vue 2:**\n~~~vue\n<template>\n  <input :value=\"value\" @input=\"$emit('input', $event.target.value)\">\n</template>\n<script>\nexport default { props: { value: String } }\n</script>\n~~~\nРодитель пишет `<NameInput v-model=\"name\" />`.\n\n**Отличие Vue 3:** по умолчанию используются prop `modelValue` и событие `update:modelValue`; в `<script setup>` Vue 3.4+ их удобно объявлять через `defineModel()`. В Vue 2 можно было настроить другие имена через опцию `model`.",
+    "level": "middle",
+    "tags": ["vue2", "v-model", "migration"],
+    "enabled": true
+  },
+  {
+    "id": "vue-legacy-004",
+    "topicId": "vue",
+    "sectionId": "vue-legacy",
+    "question": "Как защитить маршрут в Vue Router 3, который обычно используют с Vue 2?",
+    "answer": "В Vue Router 3 глобальный guard получает `to`, `from` и функцию `next`. После проверки доступа нужно вызвать `next()` для продолжения или `next({ name: 'login' })` для перенаправления. Каждый путь выполнения должен вызвать `next` ровно один раз, иначе переход зависнет или выполнится дважды.\n\n**Простой пример:**\n~~~js\nrouter.beforeEach((to, from, next) => {\n  if (to.meta.requiresAuth && !auth.isLoggedIn) {\n    next({ name: 'login' })\n  } else {\n    next()\n  }\n})\n~~~\nСтраницу входа не помечают `requiresAuth`, чтобы избежать цикла.\n\n**Отличие Vue Router 4:** современный guard может вернуть объект маршрута вместо вызова `next`. Ни тот ни другой guard не заменяет серверную проверку доступа к данным.",
+    "level": "middle",
+    "tags": ["vue2", "vue-router-3", "guards"],
+    "enabled": true
+  },
+  {
+    "id": "vue-legacy-005",
+    "topicId": "vue",
+    "sectionId": "vue-legacy",
+    "question": "Как во Vuex 3 для Vue 2 связаны state, getters, mutations и actions?",
+    "answer": "`state` хранит данные, `getters` вычисляют удобные представления этих данных, `mutations` синхронно изменяют state, а `actions` выполняют логику, в том числе асинхронную, и вызывают mutations через `commit`. Компонент читает состояние через `$store.state` и запускает action через `dispatch`.\n\n**Простой пример:**\n~~~js\nconst store = new Vuex.Store({\n  state: { count: 0 },\n  getters: { doubled: state => state.count * 2 },\n  mutations: { increment(state) { state.count++ } },\n  actions: { incrementLater({ commit }) {\n    setTimeout(() => commit('increment'), 1000)\n  } }\n})\nstore.dispatch('incrementLater')\n~~~\n\n**На собеседовании:** асинхронный код помещают в action; mutation должна изменить state синхронно. В Vue 3 может использоваться Vuex 4, но для новых приложений обычно выбирают Pinia, где отдельного слоя mutations нет.",
+    "level": "middle",
+    "tags": ["vue2", "vuex-3", "state"],
+    "enabled": true
+  }
+]

@@ -4,7 +4,7 @@
     "topicId": "vue",
     "sectionId": "vue-components",
     "question": "Как передавать данные между родителем и дочерним компонентом во Vue?",
-    "answer": "Родитель передаёт значения через props. Ребёнок сообщает о желаемом изменении событием emit, а родитель меняет состояние. Так видно, кто владеет данными.\n\n**Простой пример — UserCard.vue:**\n~~~vue\n<script setup>\ndefineProps({ name: String })\nconst emit = defineEmits(['rename'])\n</script>\n<template>\n  <p>{{ name }}</p>\n  <button @click=\"emit('rename', 'Анна')\">Сменить имя</button>\n</template>\n~~~\nВ шаблоне родителя с userName = ref('Ира'):\n~~~vue\n<UserCard :name=\"userName\" @rename=\"userName = $event\" />\n~~~\n\n**Важный нюанс:** prop доступен только для чтения на верхнем уровне. Вложенный объект технически можно изменить через общую ссылку, но обычно это нарушает понятный поток данных. События компонентов не всплывают автоматически через всех предков.",
+    "answer": "Родитель передаёт значения через props. Ребёнок сообщает о желаемом изменении событием emit, а родитель меняет состояние. Так видно, кто владеет данными.\n\n**Простой пример на Vue 3 — UserCard.vue:**\n~~~vue\n<script setup>\ndefineProps({ name: String })\nconst emit = defineEmits(['rename'])\n</script>\n<template>\n  <p>{{ name }}</p>\n  <button @click=\"emit('rename', 'Анна')\">Сменить имя</button>\n</template>\n~~~\nВ шаблоне родителя с userName = ref('Ира'):\n~~~vue\n<UserCard :name=\"userName\" @rename=\"userName = $event\" />\n~~~\n\n**Во Vue 2 с Options API** дочерний компонент объявляет `props` в объекте опций и вызывает `this.$emit('rename', 'Анна')`. Родитель так же слушает `@rename`.\n\n**Важный нюанс:** prop доступен только для чтения на верхнем уровне. Вложенный объект технически можно изменить через общую ссылку, но обычно это нарушает понятный поток данных. События компонентов не всплывают автоматически через всех предков.",
     "level": "basic",
     "tags": ["props", "emit", "components"],
     "enabled": true
@@ -14,7 +14,7 @@
     "topicId": "vue",
     "sectionId": "vue-components",
     "question": "Как связать компоненты, которые не являются родителем и ребёнком?",
-    "answer": "Для небольшого дерева данные можно поднять до ближайшего общего родителя и передать через props и события. Для глубокой передачи есть provide/inject. Если состояние нужно многим несвязанным экранам, удобнее хранилище Pinia или Vuex. Глобальная шина событий возможна, но её связи трудно отслеживать.\n\n**Простой пример:**\n~~~js\n// Родитель предоставляет тему\nprovide('theme', ref('dark'))\n\n// Любой потомок получает её\nconst theme = inject('theme')\n~~~\nВыбор зависит от масштаба: не стоит подключать глобальное хранилище ради одного значения.",
+    "answer": "Для небольшого дерева данные можно поднять до ближайшего общего родителя и передать через props и события. Для глубокой передачи есть provide/inject. Если состояние нужно многим несвязанным экранам, удобнее хранилище Pinia или Vuex. Глобальная шина событий возможна, но её связи трудно отслеживать.\n\n**Простой пример на Composition API:**\n~~~js\n// Родитель предоставляет тему\nprovide('theme', ref('dark'))\n\n// Любой потомок получает её\nconst theme = inject('theme')\n~~~\nВо Vue 2 с Options API ту же идею можно записать опциями `provide` и `inject`; `ref` и вызовы внутри `setup` доступны без дополнительного плагина во Vue 2.7. Выбор зависит от масштаба: не стоит подключать глобальное хранилище ради одного значения.",
     "level": "middle",
     "tags": ["provide", "inject", "pinia"],
     "enabled": true
@@ -34,7 +34,7 @@
     "topicId": "vue",
     "sectionId": "vue-reactivity",
     "question": "Чем Options API отличается от Composition API?",
-    "answer": "В Options API код разделён по типам: data, methods, computed, watch. В Composition API код группируют по логике задачи внутри setup: состояние, вычисления и функции одной возможности находятся рядом. Оба подхода реактивны и поддерживаются Vue 3. Composition API удобнее для переиспользования логики и больших компонентов, но не делает Options API неправильным.\n\n**Простой пример:**\n~~~vue\n<script setup>\nimport { ref, computed } from 'vue'\n\nconst count = ref(0)\nconst doubled = computed(() => count.value * 2)\nconst increment = () => count.value++\n</script>\n~~~",
+    "answer": "В Options API код разделён по типам: data, methods, computed, watch. В Composition API код группируют по логике задачи внутри setup: состояние, вычисления и функции одной возможности находятся рядом. Оба подхода поддерживаются во Vue 3. Во Vue 2.7 Composition API встроен, а в более старых версиях Vue 2 его подключают отдельным плагином. Composition API удобен для переиспользования логики, но Options API остаётся полноценным подходом.\n\n**Простой пример на Composition API:**\n~~~vue\n<script setup>\nimport { ref, computed } from 'vue'\n\nconst count = ref(0)\nconst doubled = computed(() => count.value * 2)\nconst increment = () => count.value++\n</script>\n~~~\nВ традиционном проекте Vue 2 эти же части обычно расположены в `data`, `computed` и `methods`.",
     "level": "basic",
     "tags": ["options-api", "composition-api"],
     "enabled": true
@@ -84,7 +84,7 @@
     "topicId": "vue",
     "sectionId": "vue-rendering",
     "question": "Чем v-bind отличается от v-model?",
-    "answer": "v-bind передаёт JavaScript-значение в атрибут или prop только в одном направлении. v-model создаёт двустороннюю связь: передаёт текущее значение и слушает событие его изменения. На компоненте v-model по умолчанию соответствует prop modelValue и событию update:modelValue.\n\n**Простой пример:**\n~~~vue\n<img :src=\"avatarUrl\">\n<input v-model=\"name\">\n\n<!-- Примерная развёртка v-model -->\n<input :value=\"name\" @input=\"name = $event.target.value\">\n~~~",
+    "answer": "`v-bind` передаёт JavaScript-значение в атрибут или prop в одном направлении. `v-model` связывает значение поля с состоянием: читает его и обновляет при вводе.\n\n**Простой пример на обычном input:**\n~~~vue\n<img :src=\"avatarUrl\">\n<input v-model=\"name\">\n\n<!-- Примерная развёртка для текстового поля -->\n<input :value=\"name\" @input=\"name = $event.target.value\">\n~~~\n\n**Разница версий для собственного компонента:** во Vue 2 `v-model` по умолчанию использует prop `value` и событие `input`; во Vue 3 — prop `modelValue` и событие `update:modelValue`. Для других типов полей, например checkbox, развёртка `v-model` отличается от текстового input.",
     "level": "basic",
     "tags": ["v-bind", "v-model", "directives"],
     "enabled": true
@@ -134,7 +134,7 @@
     "topicId": "vue",
     "sectionId": "vue-ecosystem",
     "question": "Какие хуки навигации есть во Vue Router?",
-    "answer": "Глобальный beforeEach запускается перед каждым переходом и часто проверяет авторизацию. beforeResolve вызывается позже, когда проверки компонентов уже пройдены. afterEach работает после подтверждённого перехода и не может его отменить. Есть также хуки конкретного маршрута и компонента.\n\n**Простой пример:**\n~~~js\nrouter.beforeEach(to => {\n  if (to.meta.requiresAuth && !auth.isLoggedIn) {\n    return { name: 'login' }\n  }\n})\n~~~\nЕсли пользователь не вошёл, защищённый маршрут перенаправит его на вход.",
+    "answer": "Глобальный `beforeEach` запускается перед каждым переходом и часто проверяет авторизацию. `beforeResolve` вызывается позже, когда проверки компонентов уже пройдены. `afterEach` работает после подтверждённого перехода и не может его отменить. Есть также хуки конкретного маршрута и компонента.\n\n**Простой пример для Vue Router 4 с Vue 3:**\n~~~js\nrouter.beforeEach(to => {\n  if (to.meta.requiresAuth && !auth.isLoggedIn) {\n    return { name: 'login' }\n  }\n})\n~~~\nЕсли пользователь не вошёл, защищённый маршрут перенаправит его на вход.\n\n**Во Vue Router 3 с Vue 2** guard обычно получает третий аргумент `next`. Для продолжения вызывают `next()`, для перенаправления — `next({ name: 'login' })`; каждый путь должен вызвать его один раз.",
     "level": "middle",
     "tags": ["vue-router", "guards"],
     "enabled": true
