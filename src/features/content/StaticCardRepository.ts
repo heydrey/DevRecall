@@ -6,21 +6,26 @@ import promisesJson from './content/javascript/promises.json'
 import javascriptInterviewJson from './content/javascript/collections-functions.json'
 import javascriptTheoryPracticeJson from './content/javascript/theory-practice.json'
 import javascript2026Json from './content/javascript/interview-2026.json'
+import javascriptJobJson from './content/javascript/job-interview.json'
 import vueInterviewJson from './content/vue/interview.json'
 import vueArchitectureJson from './content/vue/architecture.json'
 import vue2026Json from './content/vue/interview-2026.json'
 import vueExtended2026Json from './content/vue/extended-2026.json'
 import vueCurrentPracticeJson from './content/vue/current-practice.json'
 import vueLegacyJson from './content/vue/vue-2-practice.json'
+import vueJobJson from './content/vue/job-interview.json'
 import htmlCssInterviewJson from './content/html-css/interview.json'
+import htmlCssJobJson from './content/html-css/job-interview.json'
 import browserWebInterviewJson from './content/browser-web/interview.json'
 import browserRenderingStorageJson from './content/browser-web/rendering-storage.json'
 import browser2026Json from './content/browser-web/interview-2026.json'
 import httpInterviewJson from './content/http/interview.json'
 import httpAdvancedJson from './content/http/advanced.json'
 import http2026Json from './content/http/interview-2026.json'
+import httpJobJson from './content/http/job-interview.json'
 import architectureInterviewJson from './content/architecture/interview.json'
 import architecture2026Json from './content/architecture/interview-2026.json'
+import architectureJobJson from './content/architecture/job-interview.json'
 import testingInterviewJson from './content/testing/interview.json'
 import testing2026Json from './content/testing/interview-2026.json'
 import typescriptInterviewJson from './content/typescript/interview.json'
@@ -28,6 +33,7 @@ import typescript2026Json from './content/typescript/interview-2026.json'
 import phpInterviewJson from './content/php/interview.json'
 import php2026Json from './content/php/interview-2026.json'
 import phpExtended2026Json from './content/php/extended-2026.json'
+import phpJobJson from './content/php/job-interview.json'
 import laravelInterviewJson from './content/laravel/interview.json'
 import laravel2026Json from './content/laravel/interview-2026.json'
 import laravelExtended2026Json from './content/laravel/extended-2026.json'
@@ -62,21 +68,26 @@ const cards = cardSchema.array().parse([
   ...javascriptInterviewJson,
   ...javascriptTheoryPracticeJson,
   ...javascript2026Json,
+  ...javascriptJobJson,
   ...vueInterviewJson,
   ...vueArchitectureJson,
   ...vue2026Json,
   ...vueExtended2026Json,
   ...vueCurrentPracticeJson,
   ...vueLegacyJson,
+  ...vueJobJson,
   ...htmlCssInterviewJson,
+  ...htmlCssJobJson,
   ...browserWebInterviewJson,
   ...browserRenderingStorageJson,
   ...browser2026Json,
   ...httpInterviewJson,
   ...httpAdvancedJson,
   ...http2026Json,
+  ...httpJobJson,
   ...architectureInterviewJson,
   ...architecture2026Json,
+  ...architectureJobJson,
   ...testingInterviewJson,
   ...testing2026Json,
   ...typescriptInterviewJson,
@@ -84,6 +95,7 @@ const cards = cardSchema.array().parse([
   ...phpInterviewJson,
   ...php2026Json,
   ...phpExtended2026Json,
+  ...phpJobJson,
   ...laravelInterviewJson,
   ...laravel2026Json,
   ...laravelExtended2026Json,

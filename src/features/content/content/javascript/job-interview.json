@@ -1,0 +1,22 @@
+[
+  {
+    "id": "js-job-001",
+    "topicId": "javascript",
+    "sectionId": "fundamentals",
+    "question": "Как работают `export` и `import` в ES-модулях и чем отличается динамический `import()`?",
+    "answer": "ES-модуль — файл со своей областью видимости. Через `export` он объявляет то, что могут использовать другие модули; через `import` другой файл получает эти значения. Именованные экспорты импортируют в фигурных скобках, а `default` — без них. Обычный `import` записывают на верхнем уровне модуля. Динамический `import()` вызывают во время работы, когда модуль нужен не сразу; он возвращает Promise.\n\n**Простой пример:**\n~~~js\n// math.js\nexport const double = number => number * 2\n// main.js\nimport { double } from './math.js'\nconsole.log(double(3)) // 6\nconst module = await import('./math.js')\nconsole.log(module.double(4)) // 8\n~~~\n**Важный нюанс:** `import()` полезен для ленивой загрузки, но не делает тяжёлый синхронный код внутри модуля «бесплатным». В браузере относительный путь должен указывать на реальный ресурс; сборщик проекта может отдельно преобразовывать импорты.",
+    "level": "basic",
+    "tags": ["es-modules", "import", "export", "es6"],
+    "enabled": true
+  },
+  {
+    "id": "js-job-002",
+    "topicId": "javascript",
+    "sectionId": "fundamentals",
+    "question": "Чем `?.`, `??` и `||` отличаются при чтении необязательного поля?",
+    "answer": "`?.` безопасно останавливает цепочку, если значение слева `null` или `undefined`, и возвращает `undefined`. `??` берёт запасное значение только для `null` или `undefined`. `||` берёт запасное значение для любого falsy-значения, включая `0`, `false` и пустую строку. Поэтому при работе с числом или флагом `??` часто точнее.\n\n**Простой пример:**\n~~~js\nconst user = { settings: { volume: 0 } }\nconst volume = user.settings?.volume ?? 50 // 0\nconst wrongVolume = user.settings?.volume || 50 // 50\nconst city = user.address?.city ?? 'Не указан'\n~~~\nНулевая громкость — допустимое значение, её нельзя заменять на 50. Если `address` отсутствует, `?.` не даст ошибку при чтении `city`.\n\n**Важный нюанс:** `?.` защищает только ту часть цепочки, где он поставлен. Оно не проверяет правильность структуры данных и не заменяет валидацию ответа API.",
+    "level": "basic",
+    "tags": ["optional-chaining", "nullish-coalescing", "javascript"],
+    "enabled": true
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "php-job-001",
+    "topicId": "php",
+    "sectionId": "php-runtime",
+    "question": "Что такое property hooks в PHP 8.4 и какую задачу они решают?",
+    "answer": "Property hooks позволяют выполнить код при чтении (`get`) или записи (`set`) конкретного свойства. Это удобно, когда нужно, например, нормализовать ввод или вычислить значение, не создавая отдельные методы `getName()` и `setName()` для каждого поля.\n\n**Простой пример (PHP 8.4):**\n~~~php\nclass User {\n    public string $name {\n        set(string $value) {\n            $this->name = trim($value);\n        }\n    }\n}\n$user = new User();\n$user->name = '  Анна  ';\necho $user->name; // Анна\n~~~\nЗапись проходит через `set`, который удаляет пробелы. Чтение без собственного `get` возвращает сохранённое значение.\n\n**Важный нюанс:** hook меняет поведение доступа, но сам по себе не ограничивает, *кто* может записывать свойство. Для ограничения доступа нужна видимость. Property hooks появились именно в PHP 8.4; в старом проекте такой синтаксис не запустится.",
+    "level": "middle",
+    "tags": ["php-8.4", "property-hooks", "oop"],
+    "enabled": true
+  },
+  {
+    "id": "php-job-002",
+    "topicId": "php",
+    "sectionId": "php-oop",
+    "question": "Чем `public private(set)` в PHP 8.4 отличается от `readonly`?",
+    "answer": "`public private(set)` разрешает всем читать свойство, но записывать его может только код объявившего класса. Внутри класса значение можно менять многократно. `readonly` решает другую задачу: после разрешённой инициализации свойство нельзя переприсвоить даже внутри класса.\n\n**Простой пример (PHP 8.4):**\n~~~php\nclass Counter {\n    public private(set) int $count = 0;\n    public function increment(): void {\n        $this->count++;\n    }\n}\n$counter = new Counter();\n$counter->increment();\necho $counter->count; // 1\n// $counter->count = 10; // ошибка: запись снаружи закрыта\n~~~\nСчётчик доступен для чтения, но изменяется только через понятный метод.\n\n**На собеседовании:** `private(set)` — правило доступа к записи, `readonly` — запрет дальнейшего переприсваивания. Это не одно и то же. Асимметричная видимость добавлена в PHP 8.4.",
+    "level": "middle",
+    "tags": ["php-8.4", "asymmetric-visibility", "readonly"],
+    "enabled": true
+  },
+  {
+    "id": "php-job-003",
+    "topicId": "php",
+    "sectionId": "php-runtime",
+    "question": "Для чего в PHP 8.4 нужны `array_find`, `array_any` и `array_all`?",
+    "answer": "Они выражают три частые задачи без ручного цикла: найти первый подходящий элемент, проверить наличие хотя бы одного подходящего и убедиться, что подходят все. В каждую функцию передают массив и callback с условием.\n\n**Простой пример (PHP 8.4):**\n~~~php\n$ages = [17, 20, 24];\n$firstAdult = array_find($ages, fn(int $age): bool => $age >= 18); // 20\n$hasAdult = array_any($ages, fn(int $age): bool => $age >= 18);   // true\n$allAdults = array_all($ages, fn(int $age): bool => $age >= 18);  // false\n~~~\n`array_find` возвращает первый найденный элемент или `null`, если подходящего нет. `array_any` и `array_all` возвращают boolean.\n\n**Важный нюанс:** эти функции появились в PHP 8.4. Если приложение работает на более старой версии, используйте цикл или подходящие функции библиотеки; не копируйте вызов без проверки версии среды.",
+    "level": "basic",
+    "tags": ["php-8.4", "arrays", "callback"],
+    "enabled": true
+  }
+]

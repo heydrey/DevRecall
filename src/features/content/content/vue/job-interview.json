@@ -1,0 +1,32 @@
+[
+  {
+    "id": "vue-job-001",
+    "topicId": "vue",
+    "sectionId": "vue-reactivity",
+    "question": "Что делает `<script setup>` во Vue 3 и выполняется ли он один раз на весь файл?",
+    "answer": "`<script setup>` — короткая форма записи Composition API в однофайловом компоненте. Его содержимое компилируется в функцию `setup()` и выполняется для **каждого экземпляра** компонента. Объявленные сверху переменные, функции и импорты доступны в шаблоне без `return`. `defineProps` и `defineEmits` — специальные макросы компилятора для входных данных и событий.\n\n**Простой пример (Vue 3):**\n~~~vue\n<script setup>\nimport { ref } from 'vue'\nconst count = ref(0)\n</script>\n<template>\n  <button @click=\"count++\">{{ count }}</button>\n</template>\n~~~\nЕсли показать два таких компонента, у каждого будет свой `count`, потому что `ref(0)` создаётся при создании экземпляра.\n\n**Отличие от Vue 2:** там чаще использовали Options API с `data()`, `methods` и `computed`. Сам по себе `<script setup>` не означает общего состояния для всех компонентов; общее состояние выносят отдельно, например в Pinia.",
+    "level": "basic",
+    "tags": ["vue-3", "composition-api", "script-setup"],
+    "enabled": true
+  },
+  {
+    "id": "vue-job-002",
+    "topicId": "vue",
+    "sectionId": "vue-ecosystem",
+    "question": "Как в Pinia загрузить данные с API и не оставить вечную загрузку после ошибки?",
+    "answer": "Асинхронный запрос удобно выполнять в action. Store хранит данные, признак загрузки и ошибку, а компонент показывает одно из состояний: загрузка, результат, пустой список или ошибка. В `finally` нужно сбросить `loading`, потому что этот блок выполняется и при успехе, и при ошибке.\n\n**Простой пример (Vue 3 + Pinia):**\n~~~js\nexport const useUsers = defineStore('users', {\n  state: () => ({ items: [], loading: false, error: null }),\n  actions: {\n    async load() {\n      this.loading = true\n      this.error = null\n      try {\n        const response = await fetch('/api/users')\n        if (!response.ok) throw new Error('HTTP ' + response.status)\n        this.items = await response.json()\n      } catch (error) {\n        this.error = error instanceof Error ? error.message : 'Ошибка'\n      } finally {\n        this.loading = false\n      }\n    }\n  }\n})\n~~~\n**Важный нюанс:** `fetch` не выбрасывает ошибку только из-за статуса 404 или 500 — проверяйте `response.ok`. В реальном приложении также продумайте отмену устаревшего запроса и формат ответа сервера.",
+    "level": "middle",
+    "tags": ["vue-3", "pinia", "async", "api"],
+    "enabled": true
+  },
+  {
+    "id": "vue-job-003",
+    "topicId": "vue",
+    "sectionId": "vue-ecosystem",
+    "question": "Сохранится ли состояние Pinia после обновления страницы и что делать при выходе пользователя?",
+    "answer": "По умолчанию Pinia хранит состояние в памяти работающего приложения. После полной перезагрузки страницы оно создаётся заново. Если состояние нужно сохранить, его восстанавливают из сервера или локального хранилища. Выбор зависит от данных: сервер — источник истины для заказов и профиля, а локально можно сохранить, например, выбранную тему интерфейса.\n\n**Простой пример:** пользователь открыл корзину на телефоне и на компьютере. Если корзина важна на обоих устройствах, храните её на сервере и при входе загружайте в Pinia. Один `localStorage` синхронизации между устройствами не даст.\n\n**При выходе:** очищайте пользовательские данные из store и локального кэша, чтобы следующий вошедший человек не увидел чужой профиль. В Option Store есть `$reset()`, а в Setup Store собственную функцию сброса обычно пишут сами.\n\n**На собеседовании:** Pinia управляет состоянием в приложении, но не является базой данных и не гарантирует постоянное хранение сама по себе.",
+    "level": "middle",
+    "tags": ["vue-3", "pinia", "persistence", "security"],
+    "enabled": true
+  }
+]
