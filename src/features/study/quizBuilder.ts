@@ -59,3 +59,28 @@ export function buildSessionQuiz(cards: Card[], limit = 5, random: () => number 
     }
   })
 }
+
+export function buildCardQuiz(card: Card, cards: Card[], random: () => number = Math.random): QuizQuestion | null {
+  const correctText = answerPreview(card.answer)
+  const seenAnswers = new Set([correctText])
+  const candidates = shuffle(cards.filter((candidate) => candidate.id !== card.id && candidate.topicId === card.topicId), random)
+    .sort((left, right) => Number(right.sectionId === card.sectionId) - Number(left.sectionId === card.sectionId))
+  const distractors: QuizOption[] = []
+
+  for (const candidate of candidates) {
+    const text = answerPreview(candidate.answer)
+    if (!text || seenAnswers.has(text)) continue
+    seenAnswers.add(text)
+    distractors.push({ id: candidate.id, text })
+    if (distractors.length === 3) break
+  }
+
+  if (!distractors.length) return null
+  return {
+    cardId: card.id,
+    prompt: card.question,
+    answer: card.answer,
+    correctOptionId: card.id,
+    options: shuffle([{ id: card.id, text: correctText }, ...distractors], random),
+  }
+}

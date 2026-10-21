@@ -131,7 +131,7 @@ function nextQuestion(): void {
     <header class="learning-hero">
       <span class="eyebrow">Другой способ учиться</span>
       <h1>Обучение</h1>
-      <p v-if="!currentCard && !quizActive">Выберите вопрос, прочитайте разбор с двумя простыми примерами, затем попробуйте вспомнить ответ. Обычные карточки и их расписание остаются без изменений.</p>
+      <p v-if="!currentCard && !quizActive">Выберите вопрос, прочитайте разбор с двумя простыми примерами и ответьте на мини-тест в конце урока. Обычные карточки и их расписание остаются без изменений.</p>
     </header>
 
     <p v-if="loading" class="learning-state">Открываем учебник…</p>
@@ -173,16 +173,16 @@ function nextQuestion(): void {
         <article class="learning-question">
           <div class="learning-question__meta"><Layers3 :size="16" /><span>{{ topic?.sections.find((section) => section.id === currentCard?.sectionId)?.title ?? topic?.title }}</span></div>
           <h2>{{ currentCard.question }}</h2>
-          <p>Сначала разберитесь в примерах, потом проверьте себя по исходному вопросу.</p>
+          <p>Разберитесь в примерах, затем выберите ответ в мини-тесте в конце урока.</p>
         </article>
-        <LessonPanel :key="currentCard.id" :card="currentCard" @completed="markRead" />
+        <LessonPanel :key="currentCard.id" :card="currentCard" :quiz-pool="topicCards" @completed="markRead" />
         <details class="original-answer">
           <summary>Исходный ответ карточки</summary>
           <div><MarkdownContent :source="currentCard.answer" /></div>
         </details>
         <div class="learning-navigation">
           <button v-if="nextCard" class="secondary-button" @click="openCard(nextCard)">Следующий вопрос<ArrowRight :size="17" /></button>
-          <button v-if="readCards.length >= 2" class="primary-button" @click="startQuiz">Мини-тест · {{ Math.min(5, readCards.length) }} вопросов</button>
+          <button v-if="readCards.length >= 2" class="primary-button" @click="startQuiz">Тест по изученным урокам · {{ Math.min(5, readCards.length) }} вопросов</button>
         </div>
       </template>
 
@@ -196,7 +196,7 @@ function nextQuestion(): void {
           <button v-for="card in filteredCards" :key="card.id" @click="openCard(card)"><BookOpenCheck :size="18" /><span>{{ card.question }}</span><ArrowRight :size="17" /></button>
           <p v-if="!filteredCards.length">Вопросы не найдены. Попробуйте изменить фильтры.</p>
         </div>
-        <button v-if="readCards.length >= 2" class="primary-button learning-list__quiz" @click="startQuiz">Мини-тест по изученным вопросам · {{ Math.min(5, readCards.length) }}</button>
+        <button v-if="readCards.length >= 2" class="primary-button learning-list__quiz" @click="startQuiz">Тест по изученным урокам · {{ Math.min(5, readCards.length) }} вопросов</button>
       </template>
     </template>
   </div>
