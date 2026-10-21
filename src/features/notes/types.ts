@@ -1,6 +1,7 @@
 export interface LearningNote {
   id: string
   title: string
+  shortAnswer: string
   body: string
   links: string[]
   isDone: boolean
@@ -10,6 +11,7 @@ export interface LearningNote {
 
 export interface NoteDraft {
   title: string
+  shortAnswer: string
   body: string
   links: string[]
   isDone: boolean

@@ -23,7 +23,10 @@ function readSaved(key: string): SavedNotes {
   try {
     const value = JSON.parse(localStorage.getItem(key) ?? '') as Partial<SavedNotes>
     return {
-      notes: Array.isArray(value.notes) ? value.notes.filter(validNote) : [],
+      notes: Array.isArray(value.notes) ? value.notes.filter(validNote).map((note) => ({
+        ...note,
+        shortAnswer: typeof note.shortAnswer === 'string' ? note.shortAnswer : '',
+      })) : [],
       pendingIds: Array.isArray(value.pendingIds) ? value.pendingIds.filter((id): id is string => typeof id === 'string') : [],
     }
   } catch {
@@ -91,6 +94,7 @@ export const useNotesStore = defineStore('learning-notes', () => {
     const note: LearningNote = {
       id: existing?.id ?? crypto.randomUUID(),
       title: draft.title.trim(),
+      shortAnswer: draft.shortAnswer.trim(),
       body: draft.body.trim(),
       links: draft.links,
       isDone: draft.isDone,

@@ -14,6 +14,7 @@ const query = ref('')
 const editing = ref(false)
 const editingId = ref<string | null>(null)
 const title = ref('')
+const shortAnswer = ref('')
 const body = ref('')
 const linksText = ref('')
 const formError = ref('')
@@ -23,7 +24,7 @@ const activeNotes = computed(() => store.visibleNotes.filter((note) => !note.isD
 const doneNotes = computed(() => store.visibleNotes.filter((note) => note.isDone))
 const filtered = computed(() => {
   const needle = query.value.trim().toLocaleLowerCase('ru')
-  return store.visibleNotes.filter((note) => !needle || `${note.title} ${note.body} ${note.links.join(' ')}`.toLocaleLowerCase('ru').includes(needle))
+  return store.visibleNotes.filter((note) => !needle || `${note.title} ${note.shortAnswer} ${note.body} ${note.links.join(' ')}`.toLocaleLowerCase('ru').includes(needle))
 })
 const formTitle = computed(() => editingId.value ? 'Редактировать запись' : 'Новая запись')
 const syncLabel = computed(() => ({
@@ -59,6 +60,7 @@ function newNote(): void {
   void router.push('/notes')
   editingId.value = null
   title.value = ''
+  shortAnswer.value = ''
   body.value = ''
   linksText.value = ''
   formError.value = ''
@@ -69,6 +71,7 @@ function editNote(): void {
   if (!selected.value) return
   editingId.value = selected.value.id
   title.value = selected.value.title
+  shortAnswer.value = selected.value.shortAnswer
   body.value = selected.value.body
   linksText.value = selected.value.links.join('\n')
   formError.value = ''
@@ -81,7 +84,7 @@ function save(): void {
     formError.value = 'Напишите, в чём хотите разобраться.'
     return
   }
-  if (title.value.length > 160 || body.value.length > 20_000) {
+  if (title.value.length > 160 || shortAnswer.value.length > 1000 || body.value.length > 20_000) {
     formError.value = 'Название или описание слишком длинное.'
     return
   }
@@ -93,7 +96,7 @@ function save(): void {
     return
   }
   const old = store.visibleNotes.find((item) => item.id === editingId.value)
-  const note = store.save({ title: title.value, body: body.value, links, isDone: old?.isDone ?? false }, editingId.value ?? undefined)
+  const note = store.save({ title: title.value, shortAnswer: shortAnswer.value, body: body.value, links, isDone: old?.isDone ?? false }, editingId.value ?? undefined)
   editing.value = false
   void router.push({ path: '/notes', query: { id: note.id } })
 }
@@ -117,6 +120,8 @@ function formatDate(value: string): string {
       <form class="note-form" @submit.prevent="save">
         <label for="note-title">В чём разобраться? <span>*</span></label>
         <input id="note-title" v-model="title" maxlength="160" placeholder="Например: как работает Event Loop" autofocus />
+        <label for="note-short-answer">Коротко для повторения</label>
+        <textarea id="note-short-answer" v-model="shortAnswer" rows="3" maxlength="1000" placeholder="Сформулируйте суть в одном-двух предложениях своими словами" />
         <label for="note-body">Мои заметки</label>
         <textarea id="note-body" v-model="body" rows="8" maxlength="20000" placeholder="Что спросили на собеседовании? Что уже понял? Что стоит проверить?" />
         <label for="note-links">Ссылки на материалы</label>
@@ -138,9 +143,10 @@ function formatDate(value: string): string {
           <button class="secondary-button" @click="store.setDone(selected.id, !selected.isDone)"><CircleCheck :size="17" />{{ selected.isDone ? 'Вернуть в планы' : 'Отметить разобранным' }}</button>
         </div>
       </article>
+      <section v-if="selected.shortAnswer" class="note-section note-short-answer"><span class="eyebrow">Коротко для повторения</span><p class="note-body">{{ selected.shortAnswer }}</p></section>
       <section v-if="selected.body" class="note-section"><span class="eyebrow">Мои мысли</span><p class="note-body">{{ selected.body }}</p></section>
       <section v-if="selected.links.length" class="note-section"><span class="eyebrow">Материалы</span><div class="note-links"><a v-for="link in selected.links" :key="link" :href="link" target="_blank" rel="noopener noreferrer"><Link2 :size="17" /><span>{{ link }}</span><ExternalLink :size="16" /></a></div></section>
-      <p v-if="!selected.body && !selected.links.length" class="note-empty">Здесь пока только тема. Добавьте свои мысли или полезные ссылки, когда появятся.</p>
+      <p v-if="!selected.shortAnswer && !selected.body && !selected.links.length" class="note-empty">Здесь пока только тема. Добавьте короткий ответ, свои мысли или полезные ссылки, когда появятся.</p>
       <button class="delete-button" @click="remove"><Trash2 :size="17" />Удалить запись</button>
     </template>
 
@@ -155,7 +161,7 @@ function formatDate(value: string): string {
         <div v-if="filtered.length" class="notes-list">
           <button v-for="note in filtered" :key="note.id" class="note-row" @click="open(note)">
             <span class="note-row__icon"><CircleCheck v-if="note.isDone" :size="21" /><BookOpenText v-else :size="21" /></span>
-            <span class="note-row__content"><strong>{{ note.title }}</strong><small>{{ note.body || (note.links.length ? `${note.links.length} ссылок` : 'Добавьте мысли и материалы') }}</small><em>{{ note.isDone ? 'Разобрано' : 'В планах' }} · {{ formatDate(note.updatedAt) }}</em></span>
+            <span class="note-row__content"><strong>{{ note.title }}</strong><small>{{ note.shortAnswer || note.body || (note.links.length ? `${note.links.length} ссылок` : 'Добавьте мысли и материалы') }}</small><em>{{ note.isDone ? 'Разобрано' : 'В планах' }} · {{ formatDate(note.updatedAt) }}</em></span>
             <ArrowRight :size="18" class="note-row__arrow" />
           </button>
         </div>
@@ -199,6 +205,7 @@ function formatDate(value: string): string {
 .note-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
 .note-actions button { min-height:44px; }
 .note-body { margin:0; line-height:1.65; white-space:pre-wrap; overflow-wrap:anywhere; }
+.note-short-answer { background:var(--primary-soft); }
 .note-links { display:grid; gap:8px; }
 .note-links a { display:flex; align-items:center; gap:9px; min-width:0; padding:12px; border-radius:13px; background:var(--surface-muted); color:var(--primary); text-decoration:none; }
 .note-links a span { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

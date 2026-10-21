@@ -5,6 +5,7 @@ import { verifyTelegramInitData } from './_lib/telegram.js'
 interface NoteInput {
   id: string
   title: string
+  shortAnswer: string
   body: string
   links: string[]
   isDone: boolean
@@ -28,6 +29,7 @@ function parseNote(value: unknown): NoteInput {
   if (typeof note.id !== 'string' || !uuid.test(note.id)
     || typeof note.title !== 'string' || !note.title.trim() || note.title.length > 160
     || typeof note.body !== 'string' || note.body.length > 20_000
+    || (note.shortAnswer !== undefined && (typeof note.shortAnswer !== 'string' || note.shortAnswer.length > 1000))
     || typeof note.isDone !== 'boolean'
     || typeof note.updatedAt !== 'string' || !Number.isFinite(Date.parse(note.updatedAt))
     || (note.deletedAt !== null && (typeof note.deletedAt !== 'string' || !Number.isFinite(Date.parse(note.deletedAt))))) {
@@ -36,13 +38,14 @@ function parseNote(value: unknown): NoteInput {
   if (!Array.isArray(note.links) || note.links.length > 20 || note.links.some((link) => typeof link !== 'string' || link.length > 2048 || !/^https?:\/\//i.test(link))) {
     throw new ApiError(422, 'В заметке допускаются только ссылки http и https.')
   }
-  return note as unknown as NoteInput
+  return { ...note, shortAnswer: typeof note.shortAnswer === 'string' ? note.shortAnswer.trim() : '' } as NoteInput
 }
 
 function mapNote(row: Record<string, unknown>): NoteInput {
   return {
     id: String(row.id),
     title: String(row.title),
+    shortAnswer: typeof row.short_answer === 'string' ? row.short_answer : '',
     body: String(row.body),
     links: Array.isArray(row.links) ? row.links.filter((link): link is string => typeof link === 'string') : [],
     isDone: Boolean(row.is_done),
@@ -76,6 +79,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
         id: note.id,
         user_id: user.id,
         title: note.title.trim(),
+        short_answer: note.shortAnswer,
         body: note.body,
         links: note.links,
         is_done: note.isDone,
