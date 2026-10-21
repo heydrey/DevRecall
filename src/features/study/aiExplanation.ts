@@ -82,6 +82,12 @@ export async function explainCard(card: Card, mode: ExplanationMode): Promise<Ai
   return result
 }
 
+export async function regenerateLesson(card: Card): Promise<AiExplanation> {
+  const result = await requestExplanation(card, 'lesson')
+  saveCache(card, 'lesson', result)
+  return result
+}
+
 export async function askCardQuestion(card: Card, question: string, signal?: AbortSignal): Promise<AiExplanation> {
   const trimmed = question.trim()
   if (!trimmed || question.length > 1_000) throw new Error('Напишите вопрос длиной от 1 до 1000 символов.')
