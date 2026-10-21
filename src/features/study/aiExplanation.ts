@@ -1,7 +1,7 @@
 import type { Card } from '../content/types'
 import { getTelegramWebApp } from '../telegram/telegramWebApp'
 
-export type ExplanationMode = 'simple' | 'deep'
+export type ExplanationMode = 'simple' | 'deep' | 'lesson'
 
 export interface AiExplanation {
   text: string
@@ -29,6 +29,10 @@ function readCache(card: Card, mode: ExplanationMode): AiExplanation | null {
 
 export function hasCachedExplanation(card: Card): boolean {
   return Boolean(readCache(card, 'simple') || readCache(card, 'deep'))
+}
+
+export function hasCachedLesson(card: Card): boolean {
+  return Boolean(readCache(card, 'lesson'))
 }
 
 export async function isAiExplanationAvailable(): Promise<boolean> {
@@ -62,15 +66,14 @@ export async function explainCard(card: Card, mode: ExplanationMode): Promise<Ai
     const initData = getTelegramWebApp()?.initData
     if (initData && navigator.onLine) {
       const baseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') ?? ''
-      try {
-        await globalThis.fetch(`${baseUrl}/api/ai/cache-hit`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `tma ${initData}` },
-          body: JSON.stringify({ cardId: card.id, mode }),
-        })
-      } catch {
-        // Кэшированный ответ остаётся доступен, даже если метрика временно не записалась.
-      }
+      void globalThis.fetch(`${baseUrl}/api/ai/cache-hit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `tma ${initData}` },
+        body: JSON.stringify({ cardId: card.id, mode }),
+        signal: AbortSignal.timeout(3_000),
+      }).catch(() => {
+        // Метрика не должна задерживать открытие уже сохранённого урока.
+      })
     }
     return cached
   }

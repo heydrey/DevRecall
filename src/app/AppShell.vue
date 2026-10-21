@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted } from 'vue'
-import { ChartNoAxesColumnIncreasing, House, Layers3, Star } from '@lucide/vue'
+import { BookOpenCheck, ChartNoAxesColumnIncreasing, House, Layers3, Star } from '@lucide/vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { startPresenceTracking } from '../features/telegram/presence'
 
@@ -14,6 +14,7 @@ onBeforeUnmount(() => stopPresence())
 const navigationItems = [
   { to: '/', label: 'Главная', icon: House },
   { to: '/topics', label: 'Темы', icon: Layers3 },
+  { to: '/learn', label: 'Обучение', icon: BookOpenCheck },
   { to: '/favorites', label: 'Избранное', icon: Star },
   { to: '/statistics', label: 'Статистика', icon: ChartNoAxesColumnIncreasing },
 ]
@@ -64,7 +65,7 @@ const navigationItems = [
   bottom: 0;
   left: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   width: min(100%, 760px);
   margin: 0 auto;
   padding: 9px 10px calc(9px + env(safe-area-inset-bottom));
@@ -88,6 +89,11 @@ const navigationItems = [
   font-weight: 650;
   text-decoration: none;
   transition: color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+@media (max-width: 390px) {
+  .bottom-nav { padding-right: 5px; padding-left: 5px; }
+  .bottom-nav__item { font-size: .66rem; }
 }
 
 .bottom-nav__item:active {

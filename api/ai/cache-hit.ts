@@ -2,11 +2,11 @@ import { resolveUser } from '../_lib/database.js'
 import { ApiError, allowOnly, authorizationInitData, sendError, type ApiRequest, type ApiResponse } from '../_lib/http.js'
 import { verifyTelegramInitData } from '../_lib/telegram.js'
 
-function parseBody(body: unknown): { cardId: string; mode: 'simple' | 'deep' } {
+function parseBody(body: unknown): { cardId: string; mode: 'simple' | 'deep' | 'lesson' } {
   if (!body || typeof body !== 'object') throw new ApiError(422, 'Некорректные данные использования ИИ.')
   const value = body as Record<string, unknown>
   if (typeof value.cardId !== 'string' || !value.cardId || value.cardId.length > 160) throw new ApiError(422, 'Некорректная карточка.')
-  if (value.mode !== 'simple' && value.mode !== 'deep') throw new ApiError(422, 'Некорректный режим объяснения.')
+  if (value.mode !== 'simple' && value.mode !== 'deep' && value.mode !== 'lesson') throw new ApiError(422, 'Некорректный режим объяснения.')
   return { cardId: value.cardId, mode: value.mode }
 }
 
@@ -29,11 +29,11 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       user_id: user.id,
       provider: ai.provider,
       model: ai.model,
-      mode: body.mode,
+      mode: body.mode === 'lesson' ? 'deep' : body.mode,
       prompt_tokens: 0,
       completion_tokens: 0,
       total_tokens: 0,
-      rate_limits: { cacheHit: true, cardId: body.cardId },
+      rate_limits: { cacheHit: true, cardId: body.cardId, ...(body.mode === 'lesson' ? { requestKind: 'lesson' } : {}) },
     })
     if (error) throw new ApiError(500, `Не удалось записать использование ИИ [${error.code}].`)
     response.status(200).json({ recorded: true, cacheHit: true })
