@@ -11,11 +11,13 @@ import SettingsView from '../features/settings/SettingsView.vue'
 import ProfileView from '../features/profile/ProfileView.vue'
 import AdminView from '../features/admin/AdminView.vue'
 import LearningView from '../features/learning/LearningView.vue'
+import NotesView from '../features/notes/NotesView.vue'
 
 const routes: RouteRecordRaw[] = [
   { path: '/', name: 'home', component: HomeView },
   { path: '/topics', name: 'topics', component: TopicsView },
   { path: '/learn', name: 'learn', component: LearningView },
+  { path: '/notes', name: 'notes', component: NotesView },
   { path: '/topics/:topicId', name: 'topic', component: TopicView },
   { path: '/topics/:topicId/questions', name: 'topic-questions', component: TopicQuestionsView },
   { path: '/study/random', name: 'random-study', component: RandomStudyView },
